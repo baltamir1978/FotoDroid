@@ -10,7 +10,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,25 +28,22 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.DragIndicator
-import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.outlined.Circle
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Layers
-import androidx.compose.material.icons.outlined.MoreVert
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.SwapVert
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.SelectAll
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -68,7 +67,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
@@ -83,6 +81,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import coil.compose.AsyncImage
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import es.altamirano.foto.data.Category
 import es.altamirano.foto.data.Entry
 import kotlinx.coroutines.launch
@@ -102,11 +102,11 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
     val snackbar = remember { SnackbarHostState() }
 
     val selected = remember(category) { mutableStateListOf<String>() }
-    var reordering by rememberSaveable(category) { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var askMerge by remember { mutableStateOf(false) }
     var askRename by remember { mutableStateOf<Entry?>(null) }
     var menu by remember { mutableStateOf(false) }
+    val haze = remember { HazeState() }
 
     LaunchedEffect(entries) { selected.retainAll(entries.map { it.key }.toSet()) }
     BackHandler(selected.isNotEmpty()) { selected.clear() }
@@ -114,10 +114,6 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
     val sel = entries.filter { it.key in selected }
     fun toast(msg: String) = scope.launch { snackbar.showSnackbar(msg) }
     fun moveSel(to: Category, msg: String) { val n = selected.size; vm.move(selected.toList(), to); selected.clear(); toast("$msg: $n") }
-
-    val working = remember(category, reordering) { entries.toMutableStateList() }
-    fun saveOrder() = vm.reorder(category, working.map { it.key })
-    BackHandler(reordering) { saveOrder(); reordering = false }
 
     val title = when (category) { Category.NORMAL -> "Carpetas"; Category.HIDDEN -> "Ocultas"; Category.IGNORED -> "Ignoradas" }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -130,47 +126,27 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
         topBar = {
             when {
                 selected.isNotEmpty() -> TopAppBar(
-                    navigationIcon = { IconButton({ selected.clear() }) { Icon(Icons.Default.Close, "Cancelar") } },
+                    modifier = Modifier.glass(haze), colors = clearBarColors(),
+                    navigationIcon = { BarButton(Icons.Rounded.Close, "Cancelar") { selected.clear() } },
                     title = { Text("${selected.size} seleccionadas") },
-                    actions = {
-                        IconButton({ selected.clear(); selected.addAll(entries.map { it.key }) }) {
-                            Icon(Icons.Outlined.CheckCircle, "Todas")
-                        }
-                    },
-                )
-                reordering -> TopAppBar(
-                    navigationIcon = { IconButton({ saveOrder(); reordering = false }) { Icon(Icons.Default.Done, "Hecho") } },
-                    title = { Column { Text("Ordenar"); Text("Mantén pulsada y arrastra", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant) } },
-                    actions = {
-                        IconButton({ menu = true }) { Icon(Icons.Outlined.MoreVert, "Más") }
-                        DropdownMenu(menu, { menu = false }, shape = MaterialTheme.shapes.medium) {
-                            DropdownMenuItem({ Text("Por nombre") }, {
-                                menu = false; val s = working.sortedBy { it.name.lowercase() }; working.clear(); working.addAll(s)
-                            })
-                            DropdownMenuItem({ Text("Por fecha, reciente primero") }, {
-                                menu = false; val s = working.sortedByDescending { it.newest }; working.clear(); working.addAll(s)
-                            })
-                        }
-                    },
+                    actions = { BarButton(Icons.Rounded.SelectAll, "Todas") { selected.clear(); selected.addAll(entries.map { it.key }) } },
                 )
                 else -> LargeTopAppBar(
+                    modifier = Modifier.glass(haze),
                     scrollBehavior = scroll,
                     navigationIcon = {
-                        if (category != Category.NORMAL) IconButton({ vm.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás") }
+                        if (category != Category.NORMAL) BarButton(Icons.AutoMirrored.Rounded.ArrowBack, "Atrás") { vm.pop() }
                     },
                     title = { Text(title) },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    ),
+                    colors = clearBarColors(),
                     actions = {
-                        if (category == Category.NORMAL) IconButton({
+                        if (category == Category.NORMAL) BarButton(
+                            if (config.settings.lockHidden && !vm.hiddenUnlocked) Icons.Rounded.Lock else Icons.Rounded.VisibilityOff, "Ocultas",
+                        ) {
                             val go = { vm.hiddenUnlocked = true; vm.push(Screen.Folders(Category.HIDDEN)) }
                             if (config.settings.lockHidden && !vm.hiddenUnlocked) Lock.ask(activity, "Carpetas ocultas", go) else go()
-                        }) { Icon(Icons.Outlined.VisibilityOff, "Ocultas") }
-                        if (entries.size > 1) IconButton({ reordering = true }) { Icon(Icons.Outlined.SwapVert, "Ordenar") }
-                        if (category == Category.NORMAL) IconButton({ vm.push(Screen.Settings) }) { Icon(Icons.Outlined.Settings, "Ajustes") }
+                        }
+                        if (category == Category.NORMAL) BarButton(Icons.Rounded.Settings, "Ajustes") { vm.push(Screen.Settings) }
                     },
                 )
             }
@@ -192,40 +168,48 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
                         style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                reordering -> {
-                    val gridState = rememberLazyGridState()
+                else -> {
+                    // Mantener pulsada una carpeta y arrastrar la recoloca; si se suelta sin moverla, se
+                    // selecciona. Se decide al soltar, para que la barra no cambie (y la cuadrícula no
+                    // salte) en mitad del arrastre.
+                    val gridState = vm.gridState("folders:$category")
+                    val live = remember(entries) { entries.toMutableStateList() }
+                    var dragFrom by remember { mutableStateOf(emptyList<String>()) }
+                    val haptic = LocalHapticFeedback.current
                     val rstate = rememberReorderableLazyGridState(gridState) { from, to ->
-                        val a = working.indexOfFirst { it.key == from.key }
-                        val b = working.indexOfFirst { it.key == to.key }
-                        if (a >= 0 && b >= 0) working.add(b, working.removeAt(a))
+                        val a = live.indexOfFirst { it.key == from.key }
+                        val b = live.indexOfFirst { it.key == to.key }
+                        if (a >= 0 && b >= 0) { live.add(b, live.removeAt(a)); haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) }
                     }
-                    LazyVerticalGrid(GridCells.Fixed(columns), state = gridState, contentPadding = contentPad,
-                        horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(gap)) {
-                        items(working, key = { it.key }) { e ->
+                    LazyVerticalGrid(
+                        GridCells.Fixed(columns), state = gridState, contentPadding = contentPad,
+                        horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(gap),
+                        modifier = Modifier.fillMaxSize().hazeSource(haze).pinchColumns(columns, 2..4) { n -> vm.setSettings { it.copy(folderColumns = n) } },
+                    ) {
+                        items(live, key = { it.key }) { e ->
                             ReorderableItem(rstate, key = e.key) { dragging ->
-                                val s by animateFloatAsState(if (dragging) 1.06f else 1f, label = "drag")
-                                FolderTile(e, px, selected = false, reorder = true,
-                                    modifier = Modifier.longPressDraggableHandle().graphicsLayer { scaleX = s; scaleY = s })
+                                val lift by animateFloatAsState(if (dragging) 1.06f else 1f, label = "drag")
+                                FolderTile(
+                                    e, px, selected = e.key in selected, selecting = selected.isNotEmpty(),
+                                    modifier = Modifier.graphicsLayer { scaleX = lift; scaleY = lift }
+                                        .longPressDraggableHandle(
+                                            onDragStarted = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                dragFrom = live.map { it.key }
+                                            },
+                                            onDragStopped = {
+                                                val now = live.map { it.key }
+                                                if (now != dragFrom) vm.reorder(category, now)
+                                                else if (e.key in selected) selected.remove(e.key) else selected.add(e.key)
+                                            },
+                                        )
+                                        .clickable {
+                                            if (selected.isNotEmpty()) { if (e.key in selected) selected.remove(e.key) else selected.add(e.key) }
+                                            else vm.push(Screen.Folder(e.key))
+                                        },
+                                )
                             }
                         }
-                    }
-                }
-                else -> LazyVerticalGrid(
-                    GridCells.Fixed(columns), state = vm.gridState("folders:$category"), contentPadding = contentPad,
-                    horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(gap),
-                    modifier = Modifier.fillMaxSize().pinchColumns(columns, 2..4) { n -> vm.setSettings { it.copy(folderColumns = n) } },
-                ) {
-                    items(entries, key = { it.key }) { e ->
-                        FolderTile(
-                            e, px, selected = e.key in selected, selecting = selected.isNotEmpty(),
-                            modifier = Modifier.animateItem().combinedClickable(
-                                onClick = {
-                                    if (selected.isNotEmpty()) { if (e.key in selected) selected.remove(e.key) else selected.add(e.key) }
-                                    else vm.push(Screen.Folder(e.key))
-                                },
-                                onLongClick = { if (e.key in selected) selected.remove(e.key) else selected.add(e.key) },
-                            ),
-                        )
                     }
                 }
             }
@@ -239,14 +223,14 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
             ) {
                 Box {
                     FloatingBar(buildList {
-                        if (category == Category.NORMAL) add(BarAction(Icons.Outlined.VisibilityOff, "Ocultar") { moveSel(Category.HIDDEN, "Ocultadas") })
-                        else add(BarAction(Icons.Outlined.Visibility, "Mostrar") { moveSel(Category.NORMAL, "Visibles") })
-                        if (category != Category.IGNORED) add(BarAction(Icons.Outlined.Block, "Ignorar") { moveSel(Category.IGNORED, "Ignoradas") })
-                        else add(BarAction(Icons.Outlined.VisibilityOff, "Ocultar") { moveSel(Category.HIDDEN, "Ocultadas") })
-                        if (selected.size >= 2 && category != Category.IGNORED) add(BarAction(Icons.Outlined.Layers, "Juntar") { askMerge = true })
-                        add(BarAction(Icons.Outlined.Delete, "Eliminar", DANGER) { confirmDelete = true })
-                        if (sel.any { it.isGroup }) add(BarAction(Icons.Outlined.MoreVert, "Más") { menu = true })
-                    })
+                        if (category == Category.NORMAL) add(BarAction(Icons.Rounded.VisibilityOff, "Ocultar") { moveSel(Category.HIDDEN, "Ocultadas") })
+                        else add(BarAction(Icons.Rounded.Visibility, "Mostrar") { moveSel(Category.NORMAL, "Visibles") })
+                        if (category != Category.IGNORED) add(BarAction(Icons.Rounded.Block, "Ignorar") { moveSel(Category.IGNORED, "Ignoradas") })
+                        else add(BarAction(Icons.Rounded.VisibilityOff, "Ocultar") { moveSel(Category.HIDDEN, "Ocultadas") })
+                        if (selected.size >= 2 && category != Category.IGNORED) add(BarAction(Icons.Rounded.Layers, "Juntar") { askMerge = true })
+                        add(BarAction(Icons.Rounded.Delete, "Eliminar", DANGER) { confirmDelete = true })
+                        if (sel.any { it.isGroup }) add(BarAction(Icons.Rounded.MoreVert, "Más") { menu = true })
+                    }, haze)
                     DropdownMenu(menu && selected.isNotEmpty(), { menu = false }, shape = MaterialTheme.shapes.medium) {
                         DropdownMenuItem({ Text("Separar grupo") }, { menu = false; sel.filter { it.isGroup }.forEach { vm.split(it.key) }; selected.clear() })
                         if (sel.size == 1 && sel[0].isGroup) DropdownMenuItem({ Text("Renombrar grupo") }, { menu = false; askRename = sel[0] })
@@ -268,15 +252,20 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
             onDismiss = { confirmDelete = false },
         )
     }
-    if (askMerge) NameDialog("Juntar en un grupo", sel.firstOrNull()?.name.orEmpty(), onOk = { name ->
+    if (askMerge) {
         val keys = entries.map { it.key }.filter { it in selected }
-        vm.merge(keys, name); selected.clear(); toast("Juntadas ${keys.size} carpetas")
-    }, onDismiss = { askMerge = false })
+        val target = config.mergeTarget(keys)
+        val initial = target?.let { t -> sel.firstOrNull { it.key == t }?.name } ?: sel.firstOrNull()?.name.orEmpty()
+        NameDialog(if (target != null) "Añadir al grupo" else "Juntar en un grupo", initial, onOk = { name ->
+            vm.merge(keys, name); selected.clear()
+            toast(if (target != null) "Añadidas al grupo «$name»" else "Juntadas ${keys.size} carpetas")
+        }, onDismiss = { askMerge = false })
+    }
     askRename?.let { e -> NameDialog("Renombrar grupo", e.name, onOk = { vm.rename(e.key, it); selected.clear() }, onDismiss = { askRename = null }) }
 }
 
 @Composable
-private fun FolderTile(e: Entry, px: Int, selected: Boolean, modifier: Modifier = Modifier, selecting: Boolean = false, reorder: Boolean = false) {
+private fun FolderTile(e: Entry, px: Int, selected: Boolean, modifier: Modifier = Modifier, selecting: Boolean = false) {
     val corner by animateDpAsState(if (selected) 36.dp else 24.dp, label = "corner")
     val scale by animateFloatAsState(if (selected) 0.9f else 1f, label = "scale")
     val shape = RoundedCornerShape(corner)
@@ -286,16 +275,14 @@ private fun FolderTile(e: Entry, px: Int, selected: Boolean, modifier: Modifier 
                 .clip(shape).background(MaterialTheme.colorScheme.surfaceContainerHigh)
         ) {
             e.cover?.let { AsyncImage(Thumb(it, px), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
-            if (e.isGroup) Icon(Icons.Outlined.Layers, "Grupo", Modifier.align(Alignment.TopStart).padding(10.dp).size(26.dp)
+            if (e.isGroup) Icon(Icons.Rounded.Layers, "Grupo", Modifier.align(Alignment.TopStart).padding(10.dp).size(26.dp)
                 .background(Color(0x73000000), CircleShape).padding(4.dp), tint = Color.White)
             if (selecting || selected) Icon(
-                if (selected) Icons.Default.CheckCircle else Icons.Outlined.Circle, null,
+                if (selected) Icons.Rounded.CheckCircle else Icons.Outlined.Circle, null,
                 Modifier.align(Alignment.TopEnd).padding(10.dp).size(26.dp)
                     .background(if (selected) Color.White else Color(0x40000000), CircleShape),
                 tint = if (selected) MaterialTheme.colorScheme.primary else Color.White,
             )
-            if (reorder) Icon(Icons.Default.DragIndicator, null, Modifier.align(Alignment.TopEnd).padding(10.dp).size(26.dp)
-                .background(Color(0x73000000), CircleShape).padding(3.dp), tint = Color.White)
         }
         Text(e.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 4.dp, top = 8.dp, end = 4.dp))

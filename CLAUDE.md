@@ -2,10 +2,32 @@
 
 Galería de fotos y vídeos **por carpetas** (sin álbumes, sin edición), escrita desde cero en
 **Kotlin + Jetpack Compose**. Sólo para el móvil de Bruno: **Pixel 11 Pro con Android 17**, sin
-compatibilidad hacia atrás (`minSdk 35`), autofirmada e instalada a mano. Inspiración (no código):
+compatibilidad hacia atrás (`minSdk 35`), autofirmada. El móvil suele estar conectado por adb (`~/Android/Sdk/platform-tools/adb`):
+instalar con `adb install -r` después de compilar. Inspiración (no código):
 Fossify Gallery y QP Gallery.
 
 ## Estado
+
+**0.7 (11-nov-2026): fuera el botón ⇅** (Bruno: «ya no aporta»). Se quita el modo de ordenar
+entero y con él «por nombre» / «por fecha»; recolocar es sólo arrastrar. Instalada por adb.
+
+**0.6 (11-nov-2026): arrastrar para recolocar sin entrar en ⇅.** En los tres listados de carpetas,
+mantener pulsada y arrastrar recoloca (se guarda al soltar); mantener pulsada y soltar sin mover
+selecciona. La selección se decide al soltar a propósito: si se seleccionara al empezar, la barra
+grande pasaría a la de selección y la cuadrícula saltaría en mitad del arrastre. Instalada por adb. APK en `~/Documentos/FotoDroid-0.6.apk`.
+Bruno vio que «no hay ocultas» cuando sí las había: era porque estaban dentro de una carpeta
+ignorada (ignorar se hereda a las subcarpetas, por diseño desde la 0.1).
+
+**0.5 (11-nov-2026): cristal, iconos y juntar en un grupo existente.** Sin probar en el móvil.
+APK en `~/Documentos/FotoDroid-0.5.apk`.
+- **Barras de cristal** con **Haze 1.2.2** (la versión que va con Compose 1.7.6 / BOM 2024.12; las
+  2.x piden Compose más nuevo): el contenido lleva `hazeSource(state)` y la barra `Modifier.glass(state)`
+  (`Glass.kt`, `HazeMaterials.thin`). En Carpetas, carpeta, Ajustes y la barra flotante de selección.
+- **Iconos**: todos `Icons.Rounded` (menos el círculo vacío de selección); los de las barras van
+  en círculos tonales (`BarButton`); el botón de ocultas muestra un candado si están bloqueadas;
+  en Ajustes los iconos van en cuadrados redondeados con un color por sección (`Tone`).
+- **Juntar con un grupo ya creado**: lo demás se añade a ese grupo (`Config.mergeTarget`), que
+  conserva id, categoría y sitio, y el diálogo («Añadir al grupo») propone su nombre.
 
 **0.4 (11-nov-2026): demasiadas fotos** (Bruno: «hay demasiadas fotos, incluyendo las de
 carpetas de sistema»). El recorrido de la 0.2 metía basura que MediaStore no indexa. Ahora
@@ -58,8 +80,7 @@ Hecho:
   (`MANAGE_EXTERNAL_STORAGE`): se borra sin el diálogo del sistema.
 - Tres categorías por carpeta: normal, **ocultas** (pantalla aparte desde el ojo tachado) e
   **ignoradas** (Ajustes → Carpetas ignoradas; **ignorar una carpeta ignora sus subcarpetas**).
-  Cada una con **su propio orden** (botón ⇅, arrastrar con pulsación larga; también «por nombre»
-  / «por fecha»). Lo que no tiene sitio guardado sale **delante**, lo más reciente primero
+  Cada una con **su propio orden** (mantener pulsada y arrastrar). Lo que no tiene sitio guardado sale **delante**, lo más reciente primero
   (carpetas nuevas o recién pasadas de categoría).
 - Selección múltiple (pulsación larga) de carpetas: ocultar / mostrar / ignorar / **juntar** /
   separar / renombrar grupo / eliminar.

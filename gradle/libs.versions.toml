@@ -14,6 +14,7 @@ media3 = "1.5.1"
 ffmpeg = "1.5.0+1"
 biometric = "1.1.0"
 reorderable = "2.4.3"
+haze = "1.2.2"
 junit = "4.13.2"
 
 [libraries]
@@ -40,6 +41,8 @@ telephoto-zoomable = { module = "me.saket.telephoto:zoomable", version.ref = "te
 media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 media3-ffmpeg = { module = "org.jellyfin.media3:media3-ffmpeg-decoder", version.ref = "ffmpeg" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+haze-materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = "haze" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

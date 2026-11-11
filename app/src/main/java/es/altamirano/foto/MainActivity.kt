@@ -19,8 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -104,7 +104,7 @@ class MainActivity : FragmentActivity() {
         val unlock = { Lock.ask(this, "FotoDroid", onOk = { vm.appUnlocked = true }) }
         LaunchedEffect(Unit) { unlock() }
         Centered {
-            Badge(Icons.Default.Fingerprint)
+            Badge(Icons.Rounded.Fingerprint)
             Spacer(Modifier.height(28.dp))
             Text("FotoDroid está bloqueada", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(28.dp))
@@ -117,7 +117,7 @@ class MainActivity : FragmentActivity() {
     @Composable
     private fun PermissionScreen() {
         Centered {
-            Badge(Icons.Default.FolderOpen)
+            Badge(Icons.Rounded.FolderOpen)
             Spacer(Modifier.height(28.dp))
             Text("Acceso a tus fotos", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(12.dp))

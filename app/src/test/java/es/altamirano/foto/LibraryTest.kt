@@ -63,12 +63,24 @@ class LibraryTest {
     @Test fun mergeIntoGroupThenSplit() {
         val c1 = Config(orderNormal = listOf(dl, cam, shots)).merge(listOf(cam, shots), "A", "a")
         val c2 = c1.merge(listOf("g:a", dl), "B", "b")
-        assertEquals(setOf("b"), c2.groups.keys)
-        assertEquals(listOf(cam, shots, dl), c2.groups["b"]!!.folders)
-        val c3 = c2.split("g:b")
+        assertEquals(setOf("a"), c2.groups.keys)
+        assertEquals(listOf(cam, shots, dl), c2.groups["a"]!!.folders)
+        val c3 = c2.split("g:a")
         assertTrue(c3.groups.isEmpty())
         val lib = Library.build(items, c3.withOrder(Category.NORMAL, c3.orderNormal + listOf(wa, waSent)))
         assertEquals(listOf(cam, shots, dl, wa, waSent), lib.normal.map { it.key })
+    }
+
+    @Test fun addingToExistingGroupKeepsItsIdCategoryAndPlace() {
+        val c1 = Config(orderHidden = listOf(dl, cam, shots)).move(listOf(cam, shots, dl), Category.HIDDEN)
+            .withOrder(Category.HIDDEN, listOf(dl, cam, shots)).merge(listOf(cam, shots), "Viaje", "a")
+        assertEquals("g:a", c1.mergeTarget(listOf(dl, "g:a")))
+        val c2 = c1.merge(listOf(dl, "g:a"), "Viaje", "nuevo")
+        assertEquals(setOf("a"), c2.groups.keys)
+        assertEquals("Viaje", c2.groups["a"]!!.name)
+        assertEquals(Category.HIDDEN, c2.categoryOf("g:a"))
+        assertEquals(listOf("g:a"), c2.orderHidden)
+        assertEquals(null, Config().mergeTarget(listOf(cam, shots)))
     }
 
     @Test fun hiddenGroupKeepsCategoryAfterSplit() {

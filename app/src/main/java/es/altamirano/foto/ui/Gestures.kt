@@ -63,25 +63,4 @@ fun thumbPxFor(columns: Int): Int {
     return listOf(192, 256, 384, 512, 768, 1024).firstOrNull { it >= need } ?: 1024
 }
 
-data class BarAction(val icon: ImageVector, val label: String, val tint: Color? = null, val onClick: () -> Unit)
 
-/** Barra flotante con forma de píldora (acciones de la selección), al estilo de Android actual. */
-@Composable
-fun FloatingBar(actions: List<BarAction>, modifier: Modifier = Modifier) {
-    Surface(
-        modifier, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        tonalElevation = 6.dp, shadowElevation = 8.dp,
-    ) {
-        Row(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            actions.forEach { a ->
-                Column(
-                    Modifier.clip(CircleShape).clickable(onClick = a.onClick).padding(horizontal = 14.dp, vertical = 6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Icon(a.icon, a.label, Modifier.size(22.dp), tint = a.tint ?: MaterialTheme.colorScheme.onSurface)
-                    Text(a.label, style = MaterialTheme.typography.labelSmall, color = a.tint ?: MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}

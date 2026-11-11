@@ -60,19 +60,28 @@ data class Config(
         return c
     }
 
-    /** Junta claves (carpetas o grupos) en un grupo nuevo, que hereda la categoría y el sitio del primero. */
+    /** El grupo al que se añadirían estas claves al juntarlas (el primer grupo de la selección), si hay. */
+    fun mergeTarget(keys: List<String>): String? =
+        keys.firstOrNull { it.startsWith(Entry.GROUP_PREFIX) && it.removePrefix(Entry.GROUP_PREFIX) in groups }
+
+    /**
+     * Junta claves (carpetas o grupos). Si hay un grupo entre ellas, lo demás se añade a ese grupo
+     * (conserva su id, su categoría y su sitio); si no, se crea uno con la categoría y el sitio del primero.
+     */
     fun merge(keys: List<String>, name: String, newId: String): Config {
         val folders = keys.flatMap { k ->
             if (k.startsWith(Entry.GROUP_PREFIX)) groups[k.removePrefix(Entry.GROUP_PREFIX)]?.folders.orEmpty() else listOf(k)
         }.distinct()
-        val newKey = Entry.GROUP_PREFIX + newId
-        val first = keys.first()
+        val target = mergeTarget(keys)
+        val id = target?.removePrefix(Entry.GROUP_PREFIX) ?: newId
+        val newKey = Entry.GROUP_PREFIX + id
+        val first = target ?: keys.first()
         val cat = categoryOf(first)
         val ks = keys.toSet()
         val cats = categories.filterKeys { it !in ks && it !in folders }.toMutableMap()
         if (cat != Category.NORMAL) cats[newKey] = cat
         var c = copy(
-            groups = groups.filterKeys { Entry.GROUP_PREFIX + it !in ks } + (newId to Group(name, folders)),
+            groups = groups.filterKeys { Entry.GROUP_PREFIX + it !in ks } + (id to Group(name, folders)),
             categories = cats,
         )
         for (cg in Category.entries) {

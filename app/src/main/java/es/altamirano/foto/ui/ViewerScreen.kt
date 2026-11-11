@@ -33,13 +33,13 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -95,10 +95,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.DoubleClickToZoomListener
-import androidx.compose.material.icons.rounded.Pause
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.animate
@@ -276,7 +272,7 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton({ vm.pop() }, Modifier.background(GLASS, CircleShape)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Atrás", tint = Color.White)
                 }
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                     Text(current?.name.orEmpty(), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -284,9 +280,9 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
                     Text("${pager.currentPage + 1} de ${items.size}", color = Color(0xCCFFFFFF), style = MaterialTheme.typography.labelSmall)
                 }
                 Row(Modifier.background(GLASS, CircleShape)) {
-                    IconButton({ info = current }) { Icon(Icons.Outlined.Info, "Información", tint = Color.White) }
-                    IconButton({ current?.let { share(ctx, listOf(it)) } }) { Icon(Icons.Outlined.Share, "Compartir", tint = Color.White) }
-                    IconButton({ confirmDelete = current }) { Icon(Icons.Outlined.Delete, "Eliminar", tint = Color.White) }
+                    IconButton({ info = current }) { Icon(Icons.Rounded.Info, "Información", tint = Color.White) }
+                    IconButton({ current?.let { share(ctx, listOf(it)) } }) { Icon(Icons.Rounded.Share, "Compartir", tint = Color.White) }
+                    IconButton({ confirmDelete = current }) { Icon(Icons.Rounded.Delete, "Eliminar", tint = Color.White) }
                 }
             }
         }
@@ -304,7 +300,7 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("No se puede reproducir\n$e", color = Color.White, fontSize = 13.sp)
                     TextButton({ current?.let { openWith(ctx, it) } }) {
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, null, tint = Color.White); Text("  Abrir con…", color = Color.White)
+                        Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, tint = Color.White); Text("  Abrir con…", color = Color.White)
                     }
                 }
             }

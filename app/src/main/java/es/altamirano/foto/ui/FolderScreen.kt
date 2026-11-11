@@ -35,14 +35,13 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.outlined.Circle
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,7 +79,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import es.altamirano.foto.data.MediaItem
+import androidx.compose.material.icons.rounded.SelectAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -100,6 +102,7 @@ fun FolderScreen(vm: AppViewModel, key: String) {
     val snackbar = remember { SnackbarHostState() }
     val selected = remember(key) { mutableStateListOf<Long>() }
     var confirmDelete by remember { mutableStateOf(false) }
+    val haze = remember { HazeState() }
     val grid = vm.gridState("folder:$key")
     val columns = config.settings.mediaColumns
     val px = thumbPxFor(columns)
@@ -123,22 +126,21 @@ fun FolderScreen(vm: AppViewModel, key: String) {
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             if (selected.isNotEmpty()) TopAppBar(
-                navigationIcon = { IconButton({ selected.clear() }) { Icon(Icons.Default.Close, "Cancelar") } },
+                modifier = Modifier.glass(haze), colors = clearBarColors(),
+                navigationIcon = { BarButton(Icons.Rounded.Close, "Cancelar") { selected.clear() } },
                 title = { Text("${selected.size} seleccionados") },
-                actions = { IconButton({ selected.clear(); selected.addAll(items.map { it.id }) }) { Icon(Icons.Outlined.CheckCircle, "Todos") } },
+                actions = { BarButton(Icons.Rounded.SelectAll, "Todos") { selected.clear(); selected.addAll(items.map { it.id }) } },
             ) else TopAppBar(
+                modifier = Modifier.glass(haze),
                 scrollBehavior = scroll,
-                navigationIcon = { IconButton({ vm.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás") } },
+                navigationIcon = { BarButton(Icons.AutoMirrored.Rounded.ArrowBack, "Atrás") { vm.pop() } },
                 title = {
                     Column {
                         Text(entry?.name.orEmpty(), maxLines = 1, style = MaterialTheme.typography.titleLarge)
                         Text("${items.size} elementos", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors = clearBarColors(),
             )
         },
     ) { pad ->
@@ -152,7 +154,7 @@ fun FolderScreen(vm: AppViewModel, key: String) {
                     bottom = pad.calculateBottomPadding() + if (selected.isNotEmpty()) 104.dp else 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(gap),
                 verticalArrangement = Arrangement.spacedBy(gap),
-                modifier = Modifier.fillMaxSize().pinchColumns(columns, 2..7) { n -> vm.setSettings { it.copy(mediaColumns = n) } },
+                modifier = Modifier.fillMaxSize().hazeSource(haze).pinchColumns(columns, 2..7) { n -> vm.setSettings { it.copy(mediaColumns = n) } },
             ) {
                 itemsIndexed(items, key = { _, m -> m.id }, contentType = { _, _ -> 0 }) { i, m ->
                     MediaTile(
@@ -175,9 +177,9 @@ fun FolderScreen(vm: AppViewModel, key: String) {
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 16.dp),
             ) {
                 FloatingBar(listOf(
-                    BarAction(Icons.Outlined.Share, "Compartir") { share(ctx, items.filter { it.id in selected }) },
-                    BarAction(Icons.Outlined.Delete, "Eliminar", Color(0xFFE5484D)) { confirmDelete = true },
-                ))
+                    BarAction(Icons.Rounded.Share, "Compartir") { share(ctx, items.filter { it.id in selected }) },
+                    BarAction(Icons.Rounded.Delete, "Eliminar", Color(0xFFE5484D)) { confirmDelete = true },
+                ), haze)
             }
         }
     }
@@ -208,14 +210,14 @@ private fun MediaTile(m: MediaItem, px: Int, corner: androidx.compose.ui.unit.Dp
                     .padding(start = 3.dp, end = 6.dp, top = 1.dp, bottom = 1.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.PlayArrow, null, Modifier.size(13.dp), tint = Color.White)
+                Icon(Icons.Rounded.PlayArrow, null, Modifier.size(13.dp), tint = Color.White)
                 if (m.durationMs > 0) Text(formatDuration(m.durationMs), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Medium)
             }
             if (m.mime == "image/gif") Text("GIF", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(5.dp).background(Color(0x80000000), CircleShape).padding(horizontal = 6.dp))
         }
         if (selecting) Icon(
-            if (selected) Icons.Default.CheckCircle else Icons.Outlined.Circle, null,
+            if (selected) Icons.Rounded.CheckCircle else Icons.Outlined.Circle, null,
             Modifier.align(Alignment.TopStart).padding(6.dp).size(22.dp)
                 .background(if (selected) Color.White else Color(0x33000000), CircleShape),
             tint = if (selected) MaterialTheme.colorScheme.primary else Color.White,
