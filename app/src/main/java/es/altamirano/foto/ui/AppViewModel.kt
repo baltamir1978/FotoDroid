@@ -63,6 +63,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val stack = mutableStateListOf<Screen>(Screen.Folders(Category.NORMAL))
     /** Posición a la que volver en la cuadrícula al salir del visor. */
     var lastViewed by mutableStateOf<Pair<String, Int>?>(null)
+    /** Tamaño de las miniaturas de la cuadrícula (el visor las usa de marcador mientras carga). */
+    var mediaThumbPx = THUMB_PX
 
     var hasPermission by mutableStateOf(Environment.isExternalStorageManager())
         private set

@@ -7,6 +7,24 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**0.3 (11-nov-2026): escalado y aspecto** (Bruno: «una app sencilla, pero más en línea con el
+diseño de este siglo»). Sin probar en el móvil. APK en `~/Documentos/FotoDroid-0.3.apk`.
+- **Escalado**: las miniaturas se piden al tamaño real de la casilla (`thumbPxFor`, escalones
+  192…1024 px según columnas y ancho de pantalla); antes eran 320 px fijos y salían borrosas en
+  casillas grandes. El visor usa la de la cuadrícula como marcador (`vm.mediaThumbPx`).
+  **Pellizcar** cambia columnas (`pinchColumns`, en el pase `Initial` para que la cuadrícula no se
+  desplace): carpetas 2–4, archivos 2–7, con animación (`animateItem`). Doble toque a 2,5× y vuelta
+  (antes iba directo a 8×; pellizcando se sigue llegando a 8×).
+- **Aspecto** (Material 3 Expressive): fuentes del Pixel (`DeviceFontFamilyName("google-sans")` y
+  `google-sans-text`, con Roboto si no están), formas más redondeadas, título grande plegable en
+  Carpetas y Ajustes, barra que se esconde al bajar en la cuadrícula, **barra flotante en píldora**
+  con las acciones de la selección (`FloatingBar`), selección que encoge y redondea la casilla,
+  círculos de selección, recuento «12 fotos · 3 vídeos», asa rápida con burbuja de mes y año,
+  Ajustes en tarjetas agrupadas con icono (como Android 16), pantallas de permiso y bloqueo nuevas.
+- **Visor**: botones en círculos translúcidos, **deslizar hacia abajo para cerrar** (sólo sin
+  zoom: si un hijo consume el gesto, no se activa), barra de vídeo con pista gruesa y asa vertical
+  con hueco (estilo de los deslizadores actuales), tiempos en píldoras.
+
 **0.2 (11-nov-2026): faltaban carpetas con fotos** (Bruno, probando la 0.1 en el móvil). La 0.1
 sólo leía MediaStore, que no indexa carpetas con `.nomedia`, carpetas que empiezan por punto ni lo
 que algunas apps no registran. Ahora `FileScanner` recorre el almacenamiento (todos los volúmenes;

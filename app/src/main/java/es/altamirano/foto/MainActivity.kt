@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -103,26 +104,41 @@ class MainActivity : FragmentActivity() {
         val unlock = { Lock.ask(this, "FotoDroid", onOk = { vm.appUnlocked = true }) }
         LaunchedEffect(Unit) { unlock() }
         Centered {
-            Icon(Icons.Default.Fingerprint, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(24.dp))
-            Button(onClick = unlock) { Text("Desbloquear") }
+            Badge(Icons.Default.Fingerprint)
+            Spacer(Modifier.height(28.dp))
+            Text("FotoDroid está bloqueada", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(28.dp))
+            Button(onClick = unlock, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 32.dp, vertical = 16.dp)) {
+                Text("Desbloquear", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 
     @Composable
     private fun PermissionScreen() {
         Centered {
-            Icon(Icons.Default.FolderOpen, null, Modifier.size(72.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(24.dp))
+            Badge(Icons.Default.FolderOpen)
+            Spacer(Modifier.height(28.dp))
+            Text("Acceso a tus fotos", style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(12.dp))
             Text(
                 "FotoDroid necesita acceso a todos los archivos para leer y borrar fotos y vídeos " +
                     "de cualquier carpeta sin pedir permiso cada vez.",
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(24.dp))
-            Button(onClick = {
+            Spacer(Modifier.height(32.dp))
+            Button(contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 32.dp, vertical = 16.dp), onClick = {
                 startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:$packageName")))
-            }) { Text("Dar acceso") }
+            }) { Text("Dar acceso", style = MaterialTheme.typography.titleMedium) }
+        }
+    }
+
+    @Composable
+    private fun Badge(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+        Box(Modifier.size(112.dp).background(MaterialTheme.colorScheme.primaryContainer, androidx.compose.foundation.shape.RoundedCornerShape(36.dp)),
+            contentAlignment = Alignment.Center) {
+            Icon(icon, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 

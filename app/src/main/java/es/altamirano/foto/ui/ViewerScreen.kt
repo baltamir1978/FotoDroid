@@ -94,6 +94,20 @@ import es.altamirano.foto.data.MediaItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import me.saket.telephoto.zoomable.ZoomSpec
+import me.saket.telephoto.zoomable.DoubleClickToZoomListener
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.animate
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.positionChange
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 import me.saket.telephoto.zoomable.ZoomableContentLocation
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
@@ -101,6 +115,9 @@ import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
 
 private val ZOOM = ZoomSpec(maxZoomFactor = 8f)
+/** Doble toque: a 2,5× y vuelta (pellizcando se llega hasta 8×). */
+private val DOUBLE_TAP = DoubleClickToZoomListener.cycle(maxZoomFactor = 2.5f)
+private val GLASS = Color(0x59000000)
 
 @OptIn(UnstableApi::class)
 @kotlin.OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
@@ -196,16 +213,54 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
     }
 
     val toggle: (Offset) -> Unit = { overlay = !overlay }
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    // Deslizar hacia abajo para cerrar (sólo sin zoom: con zoom el gesto es de la imagen)
+    var dragY by remember { mutableFloatStateOf(0f) }
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val closeAt = with(density) { 120.dp.toPx() }
+    val progress = (dragY / (closeAt * 2.5f)).coerceIn(0f, 1f)
+    Box(
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 1f - progress))
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    var total = Offset.Zero
+                    var dismissing = false
+                    while (true) {
+                        val ev = awaitPointerEvent()
+                        if (ev.changes.count { it.pressed } > 1 && !dismissing) break
+                        val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!ch.pressed) break
+                        if (!dismissing) {
+                            if (ch.isConsumed) break
+                            total += ch.positionChange()
+                            if (total.y > viewConfiguration.touchSlop && total.y > 2 * abs(total.x)) { dismissing = true; overlay = false }
+                            else if (abs(total.x) > viewConfiguration.touchSlop || total.y < -viewConfiguration.touchSlop) break
+                        } else {
+                            dragY = (dragY + ch.positionChange().y).coerceAtLeast(0f)
+                            ch.consume()
+                        }
+                    }
+                    if (dismissing) {
+                        if (dragY > closeAt) vm.pop()
+                        else scope.launch { animate(dragY, 0f) { v, _ -> dragY = v } }
+                    }
+                }
+            }
+    ) {
         HorizontalPager(
             state = pager,
             key = { items.getOrNull(it)?.id ?: it },
             beyondViewportPageCount = 1,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                translationY = dragY
+                val s = 1f - progress * 0.25f
+                scaleX = s; scaleY = s
+            },
         ) { page ->
             val m = items.getOrNull(page) ?: return@HorizontalPager
             if (m.isVideo) VideoPage(m, isCurrent = page == pager.settledPage, player, videoSize, firstFrame && page == pager.settledPage, toggle)
-            else ImagePage(m, toggle)
+            else ImagePage(m, vm.mediaThumbPx, toggle)
         }
 
         val isVideo = current?.isVideo == true
@@ -215,19 +270,24 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
         AnimatedVisibility(overlay, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
             Row(
                 Modifier.fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(Color(0xAA000000), Color.Transparent)))
+                    .background(Brush.verticalGradient(listOf(Color(0x66000000), Color.Transparent)))
                     .windowInsetsPadding(bars)
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton({ vm.pop() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás", tint = Color.White) }
-                Column(Modifier.weight(1f)) {
-                    Text(current?.name.orEmpty(), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 15.sp)
-                    Text("${pager.currentPage + 1} / ${items.size}", color = Color(0xCCFFFFFF), fontSize = 12.sp)
+                IconButton({ vm.pop() }, Modifier.background(GLASS, CircleShape)) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás", tint = Color.White)
                 }
-                IconButton({ info = current }) { Icon(Icons.Outlined.Info, "Información", tint = Color.White) }
-                IconButton({ current?.let { share(ctx, listOf(it)) } }) { Icon(Icons.Default.Share, "Compartir", tint = Color.White) }
-                IconButton({ confirmDelete = current }) { Icon(Icons.Default.Delete, "Eliminar", tint = Color.White) }
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(current?.name.orEmpty(), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleSmall)
+                    Text("${pager.currentPage + 1} de ${items.size}", color = Color(0xCCFFFFFF), style = MaterialTheme.typography.labelSmall)
+                }
+                Row(Modifier.background(GLASS, CircleShape)) {
+                    IconButton({ info = current }) { Icon(Icons.Outlined.Info, "Información", tint = Color.White) }
+                    IconButton({ current?.let { share(ctx, listOf(it)) } }) { Icon(Icons.Outlined.Share, "Compartir", tint = Color.White) }
+                    IconButton({ confirmDelete = current }) { Icon(Icons.Outlined.Delete, "Eliminar", tint = Color.White) }
+                }
             }
         }
 
@@ -236,11 +296,11 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
             AnimatedVisibility(overlay && error == null, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.Center)) {
                 IconButton(
                     { if (player.isPlaying) player.pause() else { if (player.playbackState == Player.STATE_ENDED) player.seekTo(0); player.play() } },
-                    Modifier.size(64.dp).background(Color(0x66000000), CircleShape),
-                ) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Color.White, modifier = Modifier.size(36.dp)) }
+                    Modifier.size(72.dp).background(GLASS, CircleShape),
+                ) { Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = Color.White, modifier = Modifier.size(40.dp)) }
             }
             error?.let { e ->
-                Column(Modifier.align(Alignment.Center).background(Color(0xAA000000), CircleShape).padding(24.dp),
+                Column(Modifier.align(Alignment.Center).background(GLASS, RoundedCornerShape(28.dp)).padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("No se puede reproducir\n$e", color = Color.White, fontSize = 13.sp)
                     TextButton({ current?.let { openWith(ctx, it) } }) {
@@ -272,17 +332,18 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
 }
 
 @Composable
-private fun ImagePage(m: MediaItem, onTap: (Offset) -> Unit) {
+private fun ImagePage(m: MediaItem, placeholderPx: Int, onTap: (Offset) -> Unit) {
     val ctx = LocalContext.current
     val state = rememberZoomableImageState(rememberZoomableState(zoomSpec = ZOOM))
     val request = remember(m.id, m.modified) {
         ImageRequest.Builder(ctx).data(if (m.indexed) m.uri else java.io.File(m.path))
-            .placeholderMemoryCacheKey(MemoryCache.Key("t:${m.id}:${m.modified}:$THUMB_PX"))
+            .placeholderMemoryCacheKey(MemoryCache.Key("t:${m.id}:${m.modified}:$placeholderPx"))
             .build()
     }
     ZoomableAsyncImage(
         model = request, contentDescription = m.name, state = state,
         modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit, onClick = onTap,
+        onDoubleClick = DOUBLE_TAP,
     )
 }
 
@@ -294,7 +355,7 @@ private fun VideoPage(m: MediaItem, isCurrent: Boolean, player: ExoPlayer, size:
     val h = if (size.height > 0) size.height.toFloat() else m.height.toFloat()
     val ratio = if (w > 0 && h > 0) w / h else 16f / 9f
     LaunchedEffect(ratio) { zoom.setContentLocation(ZoomableContentLocation.scaledInsideAndCenterAligned(Size(ratio * 1000f, 1000f))) }
-    Box(Modifier.fillMaxSize().zoomable(zoom, onClick = onTap), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().zoomable(zoom, onClick = onTap, onDoubleClick = DOUBLE_TAP), contentAlignment = Alignment.Center) {
         Box(Modifier.aspectRatio(ratio, matchHeightConstraintsFirst = ratio < 1f)) {
             if (isCurrent) AndroidView(
                 factory = { c -> TextureView(c).also { player.setVideoTextureView(it) } },
@@ -302,7 +363,7 @@ private fun VideoPage(m: MediaItem, isCurrent: Boolean, player: ExoPlayer, size:
                 onRelease = { player.clearVideoTextureView(it) },
             )
             // La miniatura tapa el negro hasta el primer fotograma.
-            if (!showVideo) AsyncImage(Thumb(m, THUMB_PX), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            if (!showVideo) AsyncImage(Thumb(m, 512), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         }
     }
 }
@@ -317,9 +378,11 @@ private fun SeekBar(
     val frac = if (duration > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
     Column(modifier.padding(horizontal = 16.dp)) {
         if (emphasized) Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
-            Text(formatDuration(position), color = Color.White, fontSize = 12.sp)
+            Text(formatDuration(position), color = Color.White, style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.background(GLASS, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp))
             Box(Modifier.weight(1f))
-            Text(formatDuration(duration), color = Color(0xCCFFFFFF), fontSize = 12.sp)
+            Text(formatDuration(duration), color = Color.White, style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.background(GLASS, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp))
         }
         // Zona táctil alta (40 dp) para una barra fina: tocar salta, arrastrar recorre el vídeo.
         Canvas(
@@ -343,12 +406,20 @@ private fun SeekBar(
                 }
             }
         ) {
-            val track = (if (dragging) 6.dp else if (emphasized) 4.dp else 2.dp).toPx()
+            // Estilo de los deslizadores actuales de Android: pista gruesa redondeada, asa vertical y un hueco a cada lado.
+            val track = (if (dragging) 8.dp else if (emphasized) 6.dp else 3.dp).toPx()
             val y = size.height / 2
             val r = CornerRadius(track / 2)
-            drawRoundRect(Color(0x55FFFFFF), Offset(0f, y - track / 2), Size(size.width, track), r)
-            drawRoundRect(Color.White, Offset(0f, y - track / 2), Size(size.width * frac, track), r)
-            if (emphasized) drawCircle(Color.White, (if (dragging) 9.dp else 6.dp).toPx(), Offset(size.width * frac, y))
+            val x = size.width * frac
+            if (!emphasized) {
+                drawRoundRect(Color(0x55FFFFFF), Offset(0f, y - track / 2), Size(size.width, track), r)
+                drawRoundRect(Color.White, Offset(0f, y - track / 2), Size(x, track), r)
+            } else {
+                val gapPx = 5.dp.toPx(); val thumbW = 4.dp.toPx(); val thumbH = (if (dragging) 28.dp else 22.dp).toPx()
+                if (x - gapPx > 0) drawRoundRect(Color.White, Offset(0f, y - track / 2), Size(x - gapPx, track), r)
+                if (x + gapPx < size.width) drawRoundRect(Color(0x55FFFFFF), Offset(x + gapPx, y - track / 2), Size(size.width - x - gapPx, track), r)
+                drawRoundRect(Color.White, Offset(x - thumbW / 2, y - thumbH / 2), Size(thumbW, thumbH), CornerRadius(thumbW / 2))
+            }
         }
     }
 }
