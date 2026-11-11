@@ -87,9 +87,9 @@ class MediaRepository(private val context: Context) {
         val toScan = ArrayList<String>()
         for (m in items) {
             val f = File(m.path)
-            val viaStore = runCatching { resolver.delete(m.uri, null, null) > 0 }.getOrDefault(false)
+            val viaStore = m.indexed && runCatching { resolver.delete(m.uri, null, null) > 0 }.getOrDefault(false)
             if (f.exists() && !f.delete()) continue
-            if (!viaStore) toScan += m.path
+            if (!viaStore && m.indexed) toScan += m.path
             done += m.id
         }
         if (toScan.isNotEmpty()) MediaScannerConnection.scanFile(context, toScan.toTypedArray(), null, null)

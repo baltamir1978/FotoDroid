@@ -62,6 +62,12 @@ fun SettingsScreen(vm: AppViewModel) {
             NavRow("Carpetas ignoradas", "${library?.ignored?.size ?: 0} · no aparecen en ningún sitio (con sus subcarpetas)") {
                 vm.push(Screen.Folders(Category.IGNORED))
             }
+            SwitchRow("Buscar en todo el almacenamiento", "También carpetas con .nomedia o que el sistema no indexa", s.scanFiles) { on ->
+                vm.setSettings { it.copy(scanFiles = on) }
+            }
+            SwitchRow("Incluir carpetas ocultas", "Las que empiezan por punto (se pueden ignorar después)", s.dotFolders, s.scanFiles) { on ->
+                vm.setSettings { it.copy(dotFolders = on) }
+            }
             ChoiceRow("Columnas de carpetas", listOf(2, 3, 4), s.folderColumns) { n -> vm.setSettings { it.copy(folderColumns = n) } }
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))

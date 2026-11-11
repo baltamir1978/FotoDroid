@@ -3,7 +3,10 @@ package es.altamirano.foto.ui
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.text.format.Formatter
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -30,20 +33,25 @@ fun formatDuration(ms: Long): String {
     return if (h > 0) "%d:%02d:%02d".format(h, m, sec) else "%d:%02d".format(m, sec)
 }
 
+/** URI que otra app puede abrir: la de MediaStore o, si no está indexado, la de nuestro FileProvider. */
+fun MediaItem.externalUri(ctx: Context): Uri =
+    if (indexed) uri else FileProvider.getUriForFile(ctx, "${ctx.packageName}.files", File(path))
+
 fun share(ctx: Context, items: List<MediaItem>) {
     if (items.isEmpty()) return
+    val uris = items.map { it.externalUri(ctx) }
     val mime = items.map { it.mime }.distinct().singleOrNull()
         ?: if (items.all { it.isVideo }) "video/*" else if (items.none { it.isVideo }) "image/*" else "*/*"
-    val intent = if (items.size == 1) Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, items[0].uri)
-    else Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(items.map { it.uri }))
+    val intent = if (items.size == 1) Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0])
+    else Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
     intent.type = mime
-    intent.clipData = ClipData.newRawUri(null, items[0].uri).apply { items.drop(1).forEach { addItem(ClipData.Item(it.uri)) } }
+    intent.clipData = ClipData.newRawUri(null, uris[0]).apply { uris.drop(1).forEach { addItem(ClipData.Item(it)) } }
     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     ctx.startActivity(Intent.createChooser(intent, null))
 }
 
 fun openWith(ctx: Context, item: MediaItem) {
-    val i = Intent(Intent.ACTION_VIEW).setDataAndType(item.uri, item.mime.ifEmpty { if (item.isVideo) "video/*" else "image/*" })
+    val i = Intent(Intent.ACTION_VIEW).setDataAndType(item.externalUri(ctx), item.mime.ifEmpty { if (item.isVideo) "video/*" else "image/*" })
         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     runCatching { ctx.startActivity(Intent.createChooser(i, null)) }
 }

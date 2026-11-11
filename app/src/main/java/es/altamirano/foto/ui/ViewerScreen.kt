@@ -276,7 +276,7 @@ private fun ImagePage(m: MediaItem, onTap: (Offset) -> Unit) {
     val ctx = LocalContext.current
     val state = rememberZoomableImageState(rememberZoomableState(zoomSpec = ZOOM))
     val request = remember(m.id, m.modified) {
-        ImageRequest.Builder(ctx).data(m.uri)
+        ImageRequest.Builder(ctx).data(if (m.indexed) m.uri else java.io.File(m.path))
             .placeholderMemoryCacheKey(MemoryCache.Key("t:${m.id}:${m.modified}:$THUMB_PX"))
             .build()
     }

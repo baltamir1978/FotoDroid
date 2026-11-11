@@ -13,6 +13,7 @@ import es.altamirano.foto.data.Category
 import es.altamirano.foto.data.Config
 import es.altamirano.foto.data.ConfigStore
 import es.altamirano.foto.data.Entry
+import es.altamirano.foto.data.FileScanner
 import es.altamirano.foto.data.Library
 import es.altamirano.foto.data.MediaItem
 import es.altamirano.foto.data.MediaRepository
@@ -41,8 +42,16 @@ sealed interface Screen {
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = MediaRepository(app)
+    private val files = FileScanner(app)
     private val store = ConfigStore(app.filesDir)
 
+    /** Lo que da MediaStore y lo que encuentra el recorrido del almacenamiento (sin repetir). */
+    private var storeItems: List<MediaItem>? = null
+    private var fileItems: List<MediaItem> = emptyList()
+    private var lastWalk = 0L
+    private var walkJob: Job? = null
+    var walking by mutableStateOf(false)
+        private set
     private val media = MutableStateFlow<List<MediaItem>?>(null)
     private val _config = MutableStateFlow(store.load())
     val config: StateFlow<Config> = _config
@@ -83,13 +92,45 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun startScanning() {
         if (scanJob != null) return
         scanJob = viewModelScope.launch {
-            rescan()
-            repo.changes().debounce(800).collect { rescan() }
+            rescanStore()
+            walkFiles()
+            repo.changes().debounce(800).collect { rescanStore() }
         }
     }
 
-    fun rescan() = viewModelScope.launch {
-        media.value = withContext(Dispatchers.IO) { repo.scan() }
+    /** MediaStore es rápido: se vuelve a leer con cada cambio. El recorrido de archivos, sólo a ratos. */
+    private suspend fun rescanStore() {
+        storeItems = withContext(Dispatchers.IO) { repo.scan() }
+        publish()
+    }
+
+    private suspend fun publish() {
+        val store = storeItems ?: return
+        val extra = fileItems
+        media.value = if (extra.isEmpty()) store else withContext(Dispatchers.Default) {
+            val known = store.mapTo(HashSet(store.size * 2)) { it.path }
+            store + extra.filter { it.path !in known }
+        }
+    }
+
+    fun rescan(walk: Boolean = true) = viewModelScope.launch {
+        rescanStore()
+        if (walk) walkFiles()
+    }
+
+    private fun walkFiles() {
+        val s = config.value.settings
+        if (!s.scanFiles) { if (fileItems.isNotEmpty()) { fileItems = emptyList(); viewModelScope.launch { publish() } }; return }
+        if (walkJob?.isActive == true) return
+        walkJob = viewModelScope.launch {
+            walking = true
+            val known = storeItems.orEmpty().mapTo(HashSet()) { it.path }
+            val skip = config.value.categories.filter { it.value == Category.IGNORED && !it.key.startsWith(Entry.GROUP_PREFIX) }.keys
+            fileItems = withContext(Dispatchers.IO) { runCatching { files.scan(known, skip, s.dotFolders) }.getOrDefault(fileItems) }
+            lastWalk = System.currentTimeMillis()
+            walking = false
+            publish()
+        }
     }
 
     // ---- navegación
@@ -109,7 +150,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { store.save(c) }
     }
 
-    fun setSettings(f: (Settings) -> Settings) = edit { it.copy(settings = f(it.settings)) }
+    fun setSettings(f: (Settings) -> Settings) {
+        val before = config.value.settings
+        edit { it.copy(settings = f(it.settings)) }
+        val after = config.value.settings
+        if (before.scanFiles != after.scanFiles || before.dotFolders != after.dotFolders) walkFiles()
+    }
     fun move(keys: Collection<String>, to: Category) = edit { it.move(keys, to) }
     fun reorder(c: Category, keys: List<String>) = edit { it.withOrder(c, keys) }
     fun merge(keys: List<String>, name: String) = edit { it.merge(keys, name, UUID.randomUUID().toString().take(8)) }
@@ -119,7 +165,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---- borrar
     fun deleteItems(items: Collection<MediaItem>, done: (Int) -> Unit = {}) = viewModelScope.launch {
         val ids = withContext(Dispatchers.IO) { repo.delete(items) }
-        media.update { m -> m?.filterNot { it.id in ids } }
+        forgetItems(ids)
         done(ids.size)
     }
 
@@ -127,10 +173,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val n = withContext(Dispatchers.IO) {
             repo.deleteFolders(entries.flatMap { it.folders }, entries.flatMap { it.items })
         }
-        val gone = entries.flatMap { it.items }.map { it.id }.toSet()
-        media.update { m -> m?.filterNot { it.id in gone } }
+        forgetItems(entries.flatMap { it.items }.map { it.id }.toSet())
         edit { c -> c.forget(entries.filter { it.isGroup }.map { it.key }) }
         done(n)
+    }
+
+    private fun forgetItems(ids: Set<Long>) {
+        storeItems = storeItems?.filterNot { it.id in ids }
+        fileItems = fileItems.filterNot { it.id in ids }
+        media.update { m -> m?.filterNot { it.id in ids } }
     }
 
     // ---- ciclo de vida para el bloqueo
@@ -148,7 +199,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         backgroundAt = 0
+        // Al volver a la app, si hace rato del último recorrido, se repite (lo nuevo de otras apps).
+        if (hasPermission && lastWalk > 0 && System.currentTimeMillis() - lastWalk > WALK_EVERY_MS) walkFiles()
     }
 
-    companion object { const val LOCK_GRACE_MS = 15_000L }
+    companion object { const val LOCK_GRACE_MS = 15_000L
+        const val WALK_EVERY_MS = 120_000L }
 }

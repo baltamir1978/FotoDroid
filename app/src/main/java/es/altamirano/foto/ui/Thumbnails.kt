@@ -27,7 +27,7 @@ private class ThumbFetcher(private val t: Thumb, private val context: Context) :
     override suspend fun fetch(): FetchResult = withContext(Dispatchers.IO) {
         val m = t.item
         val size = Size(t.px, t.px)
-        val bmp: Bitmap = runCatching { context.contentResolver.loadThumbnail(m.uri, size, null) }.getOrNull()
+        val bmp: Bitmap = (if (m.indexed) runCatching { context.contentResolver.loadThumbnail(m.uri, size, null) }.getOrNull() else null)
             ?: if (m.isVideo) videoFrame(m.path, t.px) else imageDecode(m, t.px)
         DrawableResult(BitmapDrawable(context.resources, bmp), isSampled = true, dataSource = DataSource.DISK)
     }
@@ -39,7 +39,7 @@ private class ThumbFetcher(private val t: Thumb, private val context: Context) :
     }
 
     private fun imageDecode(m: MediaItem, px: Int): Bitmap =
-        ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, m.uri)) { d, info, _ ->
+        ImageDecoder.decodeBitmap(if (m.indexed) ImageDecoder.createSource(context.contentResolver, m.uri) else ImageDecoder.createSource(java.io.File(m.path))) { d, info, _ ->
             val s = maxOf(1, minOf(info.size.width, info.size.height) / px)
             d.setTargetSize(maxOf(1, info.size.width / s), maxOf(1, info.size.height / s))
             d.allocator = ImageDecoder.ALLOCATOR_SOFTWARE

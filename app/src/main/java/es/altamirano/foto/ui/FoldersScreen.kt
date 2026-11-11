@@ -173,6 +173,8 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
     ) { pad ->
         val cols = GridCells.Fixed(config.settings.folderColumns)
         val contentPad = PaddingValues(start = 12.dp, end = 12.dp, top = pad.calculateTopPadding() + 4.dp, bottom = pad.calculateBottomPadding() + 16.dp)
+        if (vm.walking && category == Category.NORMAL) androidx.compose.material3.LinearProgressIndicator(
+            Modifier.fillMaxWidth().padding(top = pad.calculateTopPadding()))
         when {
             library == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             entries.isEmpty() -> Box(Modifier.fillMaxSize().padding(pad).padding(32.dp), contentAlignment = Alignment.Center) {

@@ -83,4 +83,11 @@ class LibraryTest {
         assertTrue(c.groups.isEmpty() && c.categories.isEmpty() && c.orderHidden.isEmpty())
         assertEquals(Entry.GROUP_PREFIX, "g:")
     }
+
+    @Test fun fileIdsAreNegativeAndStable() {
+        val a = es.altamirano.foto.data.FileScanner.idFor("$cam/x.jpg")
+        assertTrue(a < 0)
+        assertEquals(a, es.altamirano.foto.data.FileScanner.idFor("$cam/x.jpg"))
+        assertTrue(a != es.altamirano.foto.data.FileScanner.idFor("$cam/y.jpg"))
+    }
 }

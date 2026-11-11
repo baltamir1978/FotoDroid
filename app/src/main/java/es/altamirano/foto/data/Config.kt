@@ -15,6 +15,10 @@ data class Settings(
     val mediaColumns: Int = 4,
     val folderColumns: Int = 3,
     val loopVideos: Boolean = true,
+    /** Recorrer el almacenamiento para encontrar lo que el sistema no indexa. */
+    val scanFiles: Boolean = true,
+    /** Incluir carpetas que empiezan por punto. */
+    val dotFolders: Boolean = true,
 )
 
 /** Todo lo que el usuario decide: categorías, órdenes, grupos y ajustes. */

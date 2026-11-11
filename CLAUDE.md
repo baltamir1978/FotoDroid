@@ -7,6 +7,19 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**0.2 (11-nov-2026): faltaban carpetas con fotos** (Bruno, probando la 0.1 en el móvil). La 0.1
+sólo leía MediaStore, que no indexa carpetas con `.nomedia`, carpetas que empiezan por punto ni lo
+que algunas apps no registran. Ahora `FileScanner` recorre el almacenamiento (todos los volúmenes;
+de `Android/` sólo `media`, porque `data` y `obb` no se pueden leer; salta `.thumbnails`, `.cache`,
+`.trashed*`… y las carpetas ignoradas) y añade lo que MediaStore no tiene, con **id negativo**
+(FNV-1a de la ruta) y URI `file://`. Para compartir esos archivos o abrirlos con otra app se usa un
+`FileProvider` (`${applicationId}.files`). MediaStore se vuelve a leer con cada cambio; el recorrido
+se hace al arrancar, desde «Volver a leer el almacenamiento» y al volver a la app si han pasado más
+de 2 min (barra de progreso fina arriba mientras tanto). En Ajustes se puede desactivar, y también
+quitar las carpetas que empiezan por punto. Las carpetas encontradas así salen al principio
+(«sin sitio»). Sin probar en el móvil. APK en `~/Documentos/FotoDroid-0.2.apk`. Si siguen
+faltando carpetas, preguntar la ruta de una para ver por qué.
+
 **0.1 (11-nov-2026): compila y pasan 7 pruebas** (`LibraryTest`: categorías, órdenes, juntar y
 separar). APK firmado en `~/Documentos/FotoDroid-0.1.apk` (5,9 MB, sólo arm64). **Sin probar en el
 móvil.**
@@ -42,8 +55,7 @@ Hecho:
   va por encima de la barra de gestos.
 
 Falta / ideas: probar en el móvil (sobre todo MKV/AVI con audio raro, HEIF grandes, borrar con
-MediaStore), abrir archivos desde otras apps (`ACTION_VIEW`), carpetas con `.nomedia` (MediaStore
-no las indexa), vídeo con códec de vídeo no soportado por el Pixel (MPEG-2, WMV: FFmpeg de Jellyfin
+MediaStore), abrir archivos desde otras apps (`ACTION_VIEW`), vídeo con códec de vídeo no soportado por el Pixel (MPEG-2, WMV: FFmpeg de Jellyfin
 sólo trae audio; la alternativa sería libVLC), papelera en vez de borrar para siempre.
 
 ## Datos

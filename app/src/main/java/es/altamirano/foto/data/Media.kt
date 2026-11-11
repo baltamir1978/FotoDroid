@@ -4,8 +4,12 @@ import android.content.ContentUris
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.compose.runtime.Immutable
+import java.io.File
 
-/** Un archivo de imagen o vídeo tal como lo indexa MediaStore. */
+/**
+ * Un archivo de imagen o vídeo. Con `id` ≥ 0 viene de MediaStore; con `id` < 0 lo ha encontrado
+ * `FileScanner` recorriendo el almacenamiento (carpetas con `.nomedia`, ocultas, sin indexar).
+ */
 @Immutable
 data class MediaItem(
     val id: Long,
@@ -23,9 +27,11 @@ data class MediaItem(
     val width: Int,
     val height: Int,
 ) {
-    /** URI de MediaStore (se calcula al usarla). */
+    val indexed get() = id >= 0
+
+    /** URI de MediaStore, o `file://` si el sistema no lo tiene indexado (se calcula al usarla). */
     val uri: Uri by lazy {
-        ContentUris.withAppendedId(
+        if (!indexed) Uri.fromFile(File(path)) else ContentUris.withAppendedId(
             if (isVideo) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
             else MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL), id,
         )
