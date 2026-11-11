@@ -15,8 +15,8 @@ android {
         applicationId = "es.altamirano.foto"
         minSdk = 35          // Android 15: sólo para el Pixel 11 Pro (Android 17), sin compatibilidad hacia atrás
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3"
+        versionCode = 4
+        versionName = "0.4"
         ndk { abiFilters += "arm64-v8a" }   // FFmpeg trae librerías nativas: sólo las del Pixel
     }
 

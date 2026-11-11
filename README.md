@@ -3,14 +3,15 @@
 Galería de fotos y vídeos para Android **por carpetas**, rápida y minimalista. Sin álbumes y sin
 edición: ver, ampliar, compartir y borrar.
 
-**Estado: 0.3** (11-nov-2026), sin probar todavía en el móvil. Pensada para un Pixel 11 Pro con
+**Estado: 0.4** (11-nov-2026), sin probar todavía en el móvil. Pensada para un Pixel 11 Pro con
 Android 17 (no funciona por debajo de Android 15).
 
 ## Qué hace
 
 - **Carpetas reales** del almacenamiento, con su portada y número de archivos. Además de lo que
-  indexa el sistema, recorre el almacenamiento y encuentra también las carpetas con `.nomedia` y
-  las que empiezan por punto.
+  indexa el sistema, recorre el almacenamiento y encuentra también las carpetas con `.nomedia` (y,
+  si se activa, las que empiezan por punto), sin traerse la basura de las apps: papelera de Google
+  Fotos, cachés, miniaturas, stickers, iconos ni las carpetas de apps del sistema en `Android/media`.
 - **Ocultas**: carpetas aparte que sólo se ven al entrar en «Ocultas» (con huella si se quiere).
 - **Ignoradas**: carpetas (y sus subcarpetas) que no aparecen en ningún sitio.
 - **Orden personalizado** arrastrando, distinto para las normales, las ocultas y las ignoradas.

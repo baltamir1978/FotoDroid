@@ -7,6 +7,16 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**0.4 (11-nov-2026): demasiadas fotos** (Bruno: «hay demasiadas fotos, incluyendo las de
+carpetas de sistema»). El recorrido de la 0.2 metía basura que MediaStore no indexa. Ahora
+`FileScanner`: salta los archivos que empiezan por punto (sobre todo `.trashed-…`, la papelera de
+Google Fotos, que volvía a enseñar lo borrado, y `.pending-…`); salta carpetas de basura por
+nombre (`JUNK_DIRS`: cache, thumbs, stickers, avatars…, con o sin punto); en `Android/media` no
+entra en paquetes `android*`, `com.android.*`, `com.google.*`, `com.samsung.*`; deja fuera las
+imágenes de menos de 12 KB (`MIN_IMAGE_BYTES`). «Carpetas que empiezan por punto» pasa a estar
+desactivado por defecto. Prueba en `FileScannerTest`. Sin probar en el móvil. APK en
+`~/Documentos/FotoDroid-0.4.apk`.
+
 **0.3 (11-nov-2026): escalado y aspecto** (Bruno: «una app sencilla, pero más en línea con el
 diseño de este siglo»). Sin probar en el móvil. APK en `~/Documentos/FotoDroid-0.3.apk`.
 - **Escalado**: las miniaturas se piden al tamaño real de la casilla (`thumbPxFor`, escalones
