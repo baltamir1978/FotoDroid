@@ -3,7 +3,7 @@
 Galería de fotos y vídeos para Android **por carpetas**, rápida y minimalista. Sin álbumes y sin
 edición: ver, ampliar, compartir y borrar.
 
-**Estado: 0.7** (11-nov-2026), sin probar todavía en el móvil. Pensada para un Pixel 11 Pro con
+**Estado: 0.7** (11-nov-2026), en uso en el móvil. Pensada para un Pixel 11 Pro con
 Android 17 (no funciona por debajo de Android 15).
 
 ## Qué hace
