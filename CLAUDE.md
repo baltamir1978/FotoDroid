@@ -9,8 +9,9 @@ Fossify Gallery y QP Gallery.
 ## Estado
 
 **0.8 (13-nov-2026): papelera y pila al día. Hecha en el servidor (`plex`), sin móvil y sin la
-clave de firma: no hay APK de esta versión.** Hay que compilarla y firmarla en el portátil
-(`git pull` antes) y **probar la papelera con fotos que no importen antes de fiarse de ella**.
+clave de firma.** El mismo día se compiló y firmó en el portátil (pasan pruebas y lint): APK en
+`~/Documentos/FotoDroid-0.8.apk`, con el mismo certificado que la 0.7. **Sin probar en el móvil**
+(en el emulador no se instala: sólo trae librerías arm64). Falta **probar la papelera con fotos que no importen antes de fiarse de ella**.
 - **Papelera** (`data/Trash.kt`, `ui/TrashScreen.kt`, Ajustes → Papelera; se puede desactivar con
   `Settings.useTrash`). Borrar **mueve** el archivo a `.FotoDroid-papelera` en la raíz de su
   volumen (un cambio de nombre, con `.nomedia`) y lo apunta en `files/papelera.json`; a los 30
@@ -149,7 +150,7 @@ y copiar a `~/Documentos/FotoDroid-<versión>.apk`.
 
 **Clave de release** (creada el 11-nov-2026 en el portátil; en `plex` no está): `~/.android/claves/fotodroid-release.jks`
 con sus datos en `~/.android/claves/fotodroid-release.properties` (lo lee `app/build.gradle.kts`).
-Fuera del repo y sin copia: **si se pierde, no se puede actualizar la app instalada**. Certificado
+Fuera del repo, con copia en `~/Documentos/ClavesAndroid` desde el 13-nov-2026: **si se pierde, no se puede actualizar la app instalada**. Certificado
 `CN=Bruno, O=FotoDroid, C=ES`, SHA-256
 `4A:31:10:FA:F8:5B:56:DA:40:25:EF:68:B1:31:62:9D:A4:12:5C:C1:B0:66:38:50:48:58:7E:7C:C0:FC:70:73`.
 Ojo: en esta máquina no estaban las claves de las otras apps (se firmaron en otro equipo).
