@@ -2,21 +2,20 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "es.altamirano.foto"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "es.altamirano.foto"
         minSdk = 35          // Android 15: sólo para el Pixel 11 Pro (Android 17), sin compatibilidad hacia atrás
-        targetSdk = 35
-        versionCode = 7
-        versionName = "0.7"
+        targetSdk = 36
+        versionCode = 8
+        versionName = "0.8"
         ndk { abiFilters += "arm64-v8a" }   // FFmpeg trae librerías nativas: sólo las del Pixel
     }
 
@@ -33,6 +32,10 @@ android {
         }
     }
 
+    // Leer el idioma o un texto fuera de Compose al pintar no se entera de un cambio de idioma en
+    // caliente; aquí da igual, porque al cambiar el idioma Android recrea la actividad. Avisos, no errores.
+    lint { warning += setOf("NonObservableLocale", "LocalContextGetResourceValueCall") }
+
     buildTypes {
         release {
             if (releaseKey != null) signingConfig = signingConfigs.getByName("release")
@@ -45,7 +48,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
     packaging { jniLibs { useLegacyPackaging = false } }
 }

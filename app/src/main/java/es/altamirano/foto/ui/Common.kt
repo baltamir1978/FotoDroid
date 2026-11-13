@@ -25,6 +25,9 @@ import java.util.Date
 
 const val THUMB_PX = 320
 
+/** Lo que dicen los diálogos de borrar cuando hay papelera. */
+const val TRASH_NOTE = "Irá a la papelera, donde se guarda 30 días."
+
 fun formatDuration(ms: Long): String {
     val s = (ms / 1000).coerceAtLeast(0)
     val h = s / 3600

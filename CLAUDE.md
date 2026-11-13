@@ -8,6 +8,35 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**0.8 (13-nov-2026): papelera y pila al día. Hecha en el servidor (`plex`), sin móvil y sin la
+clave de firma: no hay APK de esta versión.** Hay que compilarla y firmarla en el portátil
+(`git pull` antes) y **probar la papelera con fotos que no importen antes de fiarse de ella**.
+- **Papelera** (`data/Trash.kt`, `ui/TrashScreen.kt`, Ajustes → Papelera; se puede desactivar con
+  `Settings.useTrash`). Borrar **mueve** el archivo a `.FotoDroid-papelera` en la raíz de su
+  volumen (un cambio de nombre, con `.nomedia`) y lo apunta en `files/papelera.json`; a los 30
+  días se borra de verdad, al abrir la app. Desde la pantalla se restaura a su sitio (rehace la
+  carpeta; si hay otro con ese nombre, vuelve como «nombre (1).ext») o se borra para siempre.
+  - **Si no se puede mover, no se borra.** `purge` sólo borra dentro de una carpeta de papelera.
+  - **A la papelera se va sin tocar MediaStore**: el sistema sigue el cambio de nombre y su fila
+    pasa a apuntar a la papelera, así que un `resolver.delete` después borraría para siempre lo
+    recién guardado. Esto está razonado, no medido: es lo primero que hay que comprobar en el
+    móvil (borrar una foto indexada y ver que sigue en la papelera y deja de salir en la galería).
+  - Lo que esté en la carpeta sin constar en el índice (datos de la app borrados) sale igual, no
+    caduca solo y vuelve a `Pictures/FotoDroid recuperado`.
+  - El recorrido y la lectura de MediaStore saltan la carpeta. Con «Bloquear las ocultas», entrar
+    en la papelera pide huella (puede haber fotos de carpetas ocultas).
+  - Al borrar una carpeta entera se pierde su `.nomedia`: restaurada, el sistema la indexa.
+  - 8 pruebas en `TrashTest`, sobre una carpeta temporal (18 en total).
+- **`FileProvider`** acotado al almacenamiento compartido (`external-path` y `/storage`), antes `/`.
+- **Pila a la par que los demás `*Droid`**: Gradle 9.9.1, AGP 9.5.1 (Kotlin integrado: sin plugin
+  `kotlin-android` ni `kotlinOptions`), Kotlin 2.4.21, Compose BOM 2026.09, Media3 1.11.1,
+  `compileSdk` 37, `targetSdk` 36. **Haze sigue en 1.2.2, telephoto en 0.15.1, Reorderable en 2.4.3
+  y el FFmpeg de Jellyfin en 1.5.0+1**: sus versiones nuevas cambian de API y no se pueden probar
+  aquí; compilan con el Compose nuevo, pero hay que ver en el móvil el cristal, el zoom, el
+  arrastre y el audio AC3/DTS.
+- **CI** en GitHub Actions; `lintDebug` pasa sin errores (`NonObservableLocale` y
+  `LocalContextGetResourceValueCall` van como avisos).
+
 **0.7 (11-nov-2026): fuera el botón ⇅** (Bruno: «ya no aporta»). Se quita el modo de ordenar
 entero y con él «por nombre» / «por fecha»; recolocar es sólo arrastrar. Instalada por adb.
 
@@ -114,11 +143,11 @@ pura (`Config`, `Library.build`) y está probada en `app/src/test`.
 
 ## Compilar y firmar
 
-`Tools/instalar-entorno.sh` (JDK 17, SDK 35 y Gradle en `~/Android`). Después:
-`./gradlew testDebugUnitTest assembleRelease` → `app/build/outputs/apk/release/app-release.apk`,
+`Tools/instalar-entorno.sh` (JDK 17, SDK y Gradle en `~/Android`; la plataforma 37 la baja Gradle
+sola). Después: `./gradlew testDebugUnitTest lintDebug assembleRelease` → `app/build/outputs/apk/release/app-release.apk`,
 y copiar a `~/Documentos/FotoDroid-<versión>.apk`.
 
-**Clave de release** (creada el 11-nov-2026 en este portátil): `~/.android/claves/fotodroid-release.jks`
+**Clave de release** (creada el 11-nov-2026 en el portátil; en `plex` no está): `~/.android/claves/fotodroid-release.jks`
 con sus datos en `~/.android/claves/fotodroid-release.properties` (lo lee `app/build.gradle.kts`).
 Fuera del repo y sin copia: **si se pierde, no se puede actualizar la app instalada**. Certificado
 `CN=Bruno, O=FotoDroid, C=ES`, SHA-256

@@ -67,7 +67,7 @@ class MediaRepository(private val context: Context) {
         return out
     }
 
-    private fun isTrash(folder: String) = folder.contains("/.trashed") || folder.contains("/.Trash")
+    private fun isTrash(folder: String) = folder.contains("/.trashed") || folder.contains("/.Trash") || folder.contains("/" + Trash.DIR)
 
     /** Avisa (agrupando ráfagas) cuando cambia algo en MediaStore. */
     fun changes(): Flow<Unit> = callbackFlow {
@@ -79,14 +79,23 @@ class MediaRepository(private val context: Context) {
     }
 
     /**
-     * Borra los archivos para siempre. Con «acceso a todos los archivos» no hace falta pedir
-     * confirmación al sistema. Devuelve los que se han borrado.
+     * Quita los archivos: a la [trash] si se da una, o para siempre. Con «acceso a todos los
+     * archivos» no hace falta pedir confirmación al sistema. Devuelve los que se han quitado.
+     *
+     * A la papelera se va **sólo moviendo el archivo**, sin tocar MediaStore: el sistema sigue el
+     * cambio de nombre y su fila pasa a apuntar a la papelera, así que un `resolver.delete` aquí
+     * borraría para siempre lo que se acaba de guardar.
      */
-    fun delete(items: Collection<MediaItem>): Set<Long> {
+    fun delete(items: Collection<MediaItem>, trash: Trash? = null): Set<Long> {
         val done = HashSet<Long>()
         val toScan = ArrayList<String>()
         for (m in items) {
             val f = File(m.path)
+            if (trash != null) {
+                // Si ya no existe, no hay nada que guardar: se da por quitado. Si no se puede mover, se queda.
+                if (!f.exists() || trash.trash(m.path, m.isVideo) != null) done += m.id
+                continue
+            }
             val viaStore = m.indexed && runCatching { resolver.delete(m.uri, null, null) > 0 }.getOrDefault(false)
             if (f.exists() && !f.delete()) continue
             if (!viaStore && m.indexed) toScan += m.path
@@ -97,8 +106,8 @@ class MediaRepository(private val context: Context) {
     }
 
     /** Borra el contenido multimedia de las carpetas y, si quedan vacías, las carpetas. */
-    fun deleteFolders(folders: Collection<String>, items: Collection<MediaItem>): Int {
-        val n = delete(items).size
+    fun deleteFolders(folders: Collection<String>, items: Collection<MediaItem>, trash: Trash? = null): Int {
+        val n = delete(items, trash).size
         for (path in folders) {
             val dir = File(path)
             val rest = dir.listFiles().orEmpty().filterNot { it.name == ".nomedia" || it.name == ".thumbnails" }
@@ -108,5 +117,10 @@ class MediaRepository(private val context: Context) {
             }
         }
         return n
+    }
+
+    /** Lo restaurado de la papelera vuelve a salir en el sistema (y en las demás apps). */
+    fun announce(paths: Collection<String>) {
+        if (paths.isNotEmpty()) MediaScannerConnection.scanFile(context, paths.toTypedArray(), null, null)
     }
 }

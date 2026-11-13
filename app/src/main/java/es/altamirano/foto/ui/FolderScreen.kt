@@ -187,7 +187,7 @@ fun FolderScreen(vm: AppViewModel, key: String) {
     if (confirmDelete) {
         val n = selected.size
         ConfirmDialog(
-            "¿Eliminar $n ${if (n == 1) "archivo" else "archivos"}?", "Se borrarán para siempre.", "Eliminar",
+            "¿Eliminar $n ${if (n == 1) "archivo" else "archivos"}?", if (vm.usesTrash) TRASH_NOTE else "Se borrarán para siempre.", "Eliminar",
             onConfirm = {
                 val s = items.filter { it.id in selected }; selected.clear()
                 vm.deleteItems(s) { scope.launch { snackbar.showSnackbar("Borrados: $it") } }

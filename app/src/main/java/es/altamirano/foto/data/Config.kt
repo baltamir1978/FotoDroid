@@ -19,6 +19,8 @@ data class Settings(
     val scanFiles: Boolean = true,
     /** Incluir carpetas que empiezan por punto (casi siempre son de apps). */
     val dotFolders: Boolean = false,
+    /** Lo borrado va a la papelera 30 días en vez de borrarse para siempre. */
+    val useTrash: Boolean = true,
 )
 
 /** Todo lo que el usuario decide: categorías, órdenes, grupos y ajustes. */

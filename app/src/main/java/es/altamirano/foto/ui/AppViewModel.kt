@@ -18,6 +18,8 @@ import es.altamirano.foto.data.Library
 import es.altamirano.foto.data.MediaItem
 import es.altamirano.foto.data.MediaRepository
 import es.altamirano.foto.data.Settings
+import es.altamirano.foto.data.Trash
+import es.altamirano.foto.data.TrashedItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -38,12 +40,17 @@ sealed interface Screen {
     data class Folder(val key: String) : Screen
     data class Viewer(val key: String, val index: Int) : Screen
     data object Settings : Screen
+    data object Trash : Screen
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = MediaRepository(app)
     private val files = FileScanner(app)
     private val store = ConfigStore(app.filesDir)
+    private val trash = Trash(java.io.File(app.filesDir, "papelera.json")) { files.roots() }
+    private val _trashed = MutableStateFlow<List<TrashedItem>>(emptyList())
+    /** Lo que hay en la papelera, lo último borrado primero. */
+    val trashed: StateFlow<List<TrashedItem>> = _trashed
 
     /** Lo que da MediaStore y lo que encuentra el recorrido del almacenamiento (sin repetir). */
     private var storeItems: List<MediaItem>? = null
@@ -93,6 +100,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     @OptIn(FlowPreview::class)
     private fun startScanning() {
         if (scanJob != null) return
+        viewModelScope.launch {
+            // Lo que lleva más de 30 días en la papelera se borra de verdad al abrir la app.
+            _trashed.value = withContext(Dispatchers.IO) { runCatching { trash.purgeExpired(); trash.list() }.getOrDefault(emptyList()) }
+        }
         scanJob = viewModelScope.launch {
             rescanStore()
             walkFiles()
@@ -166,17 +177,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- borrar
     fun deleteItems(items: Collection<MediaItem>, done: (Int) -> Unit = {}) = viewModelScope.launch {
-        val ids = withContext(Dispatchers.IO) { repo.delete(items) }
+        val bin = trashOrNull()
+        val ids = withContext(Dispatchers.IO) { repo.delete(items, bin) }
         forgetItems(ids)
+        refreshTrash()
         done(ids.size)
     }
 
     fun deleteEntries(entries: Collection<Entry>, done: (Int) -> Unit = {}) = viewModelScope.launch {
+        val bin = trashOrNull()
         val n = withContext(Dispatchers.IO) {
-            repo.deleteFolders(entries.flatMap { it.folders }, entries.flatMap { it.items })
+            repo.deleteFolders(entries.flatMap { it.folders }, entries.flatMap { it.items }, bin)
         }
+        refreshTrash()
         forgetItems(entries.flatMap { it.items }.map { it.id }.toSet())
         edit { c -> c.forget(entries.filter { it.isGroup }.map { it.key }) }
+        done(n)
+    }
+
+    // ---- papelera
+    /** ¿Lo que se borra va a la papelera? (Ajustes). */
+    val usesTrash get() = config.value.settings.useTrash
+    private fun trashOrNull() = trash.takeIf { usesTrash }
+
+    private suspend fun refreshTrash() {
+        _trashed.value = withContext(Dispatchers.IO) { runCatching { trash.list() }.getOrDefault(_trashed.value) }
+    }
+
+    fun restoreTrashed(items: Collection<TrashedItem>, done: (Int) -> Unit = {}) = viewModelScope.launch {
+        val paths = withContext(Dispatchers.IO) { items.mapNotNull { trash.restore(it) }.also { repo.announce(it) } }
+        refreshTrash()
+        done(paths.size)
+        if (paths.isNotEmpty()) { rescanStore(); walkFiles() }
+    }
+
+    fun purgeTrashed(items: Collection<TrashedItem>, done: (Int) -> Unit = {}) = viewModelScope.launch {
+        val n = withContext(Dispatchers.IO) { trash.purge(items) }
+        refreshTrash()
         done(n)
     }
 

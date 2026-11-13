@@ -97,7 +97,7 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
     val library by vm.library.collectAsState()
     val config by vm.config.collectAsState()
     val entries = library?.list(category).orEmpty()
-    val activity = LocalContext.current as FragmentActivity
+    val activity = androidx.activity.compose.LocalActivity.current as FragmentActivity
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
 
@@ -244,7 +244,7 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
         val files = sel.sumOf { it.items.size }
         ConfirmDialog(
             "¿Eliminar ${sel.size} ${if (sel.size == 1) "carpeta" else "carpetas"}?",
-            "Se borrarán para siempre $files archivos" +
+            (if (vm.usesTrash) "Irán a la papelera $files archivos" else "Se borrarán para siempre $files archivos") +
                 (if (sel.any { it.isGroup }) ", incluidos los de todas las carpetas de los grupos" else "") +
                 ". Las carpetas que queden vacías también se borran.",
             "Eliminar",

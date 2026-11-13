@@ -322,7 +322,7 @@ fun ViewerScreen(vm: AppViewModel, key: String, startIndex: Int) {
 
     info?.let { InfoDialog(it) { info = null } }
     confirmDelete?.let { m ->
-        ConfirmDialog("Eliminar archivo", "${m.name}\nSe borrará para siempre.", "Eliminar",
+        ConfirmDialog("Eliminar archivo", "${m.name}\n" + (if (vm.usesTrash) TRASH_NOTE else "Se borrará para siempre."), "Eliminar",
             onConfirm = { vm.deleteItems(listOf(m)) }, onDismiss = { confirmDelete = null })
     }
 }

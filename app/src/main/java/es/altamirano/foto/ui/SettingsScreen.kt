@@ -21,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.RestoreFromTrash
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.GridView
@@ -67,8 +69,9 @@ import dev.chrisbanes.haze.hazeSource
 fun SettingsScreen(vm: AppViewModel) {
     val config by vm.config.collectAsState()
     val library by vm.library.collectAsState()
+    val trashed by vm.trashed.collectAsState()
     val s = config.settings
-    val activity = LocalContext.current as FragmentActivity
+    val activity = androidx.activity.compose.LocalActivity.current as FragmentActivity
     val canLock = Lock.available(activity)
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val haze = remember { HazeState() }
@@ -118,6 +121,16 @@ fun SettingsScreen(vm: AppViewModel) {
                 add { ChoiceRow(Icons.Rounded.ViewModule, "Columnas", listOf(3, 4, 5, 6), s.mediaColumns) { n -> vm.setSettings { it.copy(mediaColumns = n) } } }
                 add { SwitchRow(Icons.Rounded.Repeat, "Repetir vídeos", "Al terminar, vuelven a empezar", s.loopVideos) { on ->
                     vm.setSettings { it.copy(loopVideos = on) }
+                } }
+            }
+            Section("Papelera", Tone.TERTIARY) {
+                add { SwitchRow(Icons.Rounded.Delete, "Usar la papelera", "Lo borrado se guarda 30 días; si no, se borra para siempre", s.useTrash) { on ->
+                    vm.setSettings { it.copy(useTrash = on) }
+                } }
+                add { NavRow(Icons.Rounded.RestoreFromTrash, "Ver la papelera",
+                    if (trashed.isEmpty()) "Vacía" else "${trashed.size} · ${android.text.format.Formatter.formatFileSize(activity, trashed.sumOf { it.size })}") {
+                    // En la papelera puede haber fotos de carpetas ocultas: con ese bloqueo puesto, se pide.
+                    if (s.lockHidden && !vm.hiddenUnlocked) Lock.ask(activity, "Papelera", { vm.push(Screen.Trash) }) else vm.push(Screen.Trash)
                 } }
             }
             Section(null, Tone.NEUTRAL) {

@@ -39,6 +39,7 @@ class FileScanner(private val context: Context) {
             for (f in children) {
                 val name = f.name
                 if (f.isDirectory) {
+                    if (name == Trash.DIR) continue
                     if (name.startsWith(".") && (!dots || name.startsWith(".trashed"))) continue
                     if (isJunkDir(name)) continue
                     if (depth == 0 && name == "Android") { walkAndroid(f, rootPath, known, skip, dots, out); continue }

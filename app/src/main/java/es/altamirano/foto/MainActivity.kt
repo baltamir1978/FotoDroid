@@ -47,6 +47,7 @@ import es.altamirano.foto.ui.FotoTheme
 import es.altamirano.foto.ui.Lock
 import es.altamirano.foto.ui.Screen
 import es.altamirano.foto.ui.SettingsScreen
+import es.altamirano.foto.ui.TrashScreen
 import es.altamirano.foto.ui.ViewerScreen
 import es.altamirano.foto.ui.buildImageLoader
 
@@ -91,6 +92,7 @@ class MainActivity : FragmentActivity() {
                         is Screen.Folders -> FoldersScreen(vm, base.category)
                         is Screen.Folder -> FolderScreen(vm, base.key)
                         Screen.Settings -> SettingsScreen(vm)
+                        Screen.Trash -> TrashScreen(vm)
                         is Screen.Viewer -> {}
                     }
                 }
