@@ -14,8 +14,8 @@ android {
         applicationId = "es.altamirano.foto"
         minSdk = 35          // Android 15: sólo para el Pixel 11 Pro (Android 17), sin compatibilidad hacia atrás
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.8"
+        versionCode = 9
+        versionName = "0.8.1"
         ndk { abiFilters += "arm64-v8a" }   // FFmpeg trae librerías nativas: sólo las del Pixel
     }
 
@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    implementation("es.altamirano:common")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.fragment)
@@ -79,4 +80,13 @@ dependencies {
     implementation(libs.haze)
     implementation(libs.haze.materials)
     testImplementation(libs.junit)
+}
+
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "androidx.compose.material3.ExperimentalMaterial3Api",
+            "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+        )
+    }
 }

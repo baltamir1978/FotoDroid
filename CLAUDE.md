@@ -8,6 +8,8 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**0.8.1 (22-nov-2026): aspecto Material 3 Expressive, como GpsDroid.** Lo pidió Bruno («dale una vuelta al aspecto del resto de apps con este lenguaje de diseño; lo seleccionado debería estar en un verde clarito, no en el mismo gris»). El tema sale de `droid-common` (`ui/Expressive.kt`: `AppTheme` = `MaterialExpressiveTheme` + `MotionScheme.expressive()` + esquinas grandes, y `withBrandSelection`, que pone `secondaryContainer` —chips, indicador de la barra, botones segmentados— en un tono clarito del color de la app). material3 1.5.0-rc01 en todas. **Ahora usa `droid-common`** (`includeBuild` y el CI lo clona al lado). Colores del sistema con lo seleccionado en el azul clarito del icono; sus esquinas propias pasan a las de `droid-common` (eran las mismas). APK en `~/Documentos/FotoDroid-0.8.1.apk`. **Sin probar en el móvil.**
+
 **0.8 (13-nov-2026): papelera y pila al día. Hecha en el servidor (`plex`), sin móvil y sin la
 clave de firma.** El mismo día se compiló y firmó en el portátil (pasan pruebas y lint): APK en
 `~/Documentos/FotoDroid-0.8.apk`, con el mismo certificado que la 0.7. **Sin probar en el móvil**

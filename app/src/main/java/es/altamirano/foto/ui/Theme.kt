@@ -1,8 +1,6 @@
 package es.altamirano.foto.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -15,6 +13,9 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import es.altamirano.common.ui.AppTheme
+import es.altamirano.common.ui.withBrandSelection
 
 /** Las fuentes del sistema del Pixel (Google Sans); si no están, Roboto. */
 private fun device(name: String) = FontFamily(
@@ -42,14 +43,12 @@ private val typography = Typography(
     labelSmall = base.labelSmall.with(Text, FontWeight.Medium),
 )
 
-private val shapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp), extraLarge = RoundedCornerShape(36.dp),
-)
-
 @Composable
 fun FotoTheme(content: @Composable () -> Unit) {
     val ctx = LocalContext.current
-    val scheme = if (isSystemInDarkTheme()) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
-    MaterialTheme(colorScheme = scheme, typography = typography, shapes = shapes, content = content)
+    // Colores del sistema, pero lo seleccionado en el azul clarito del icono: con algunos fondos de
+    // pantalla salía gris. Material 3 Expressive y sus esquinas, de droid-common (como todas).
+    val scheme = if (isSystemInDarkTheme()) dynamicDarkColorScheme(ctx).withBrandSelection(Color(0xFF9CC7E8), dark = true)
+        else dynamicLightColorScheme(ctx).withBrandSelection(Color(0xFF2B5876), dark = false)
+    AppTheme(scheme, typography = typography, content = content)
 }
