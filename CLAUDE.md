@@ -8,12 +8,14 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**Probada en el móvil (24-nov-2026):** Bruno la da por buena («fotodroid ok»), papelera incluida.
+
 **0.8.1 (22-nov-2026): aspecto Material 3 Expressive, como GpsDroid.** Lo pidió Bruno («dale una vuelta al aspecto del resto de apps con este lenguaje de diseño; lo seleccionado debería estar en un verde clarito, no en el mismo gris»). El tema sale de `droid-common` (`ui/Expressive.kt`: `AppTheme` = `MaterialExpressiveTheme` + `MotionScheme.expressive()` + esquinas grandes, y `withBrandSelection`, que pone `secondaryContainer` —chips, indicador de la barra, botones segmentados— en un tono clarito del color de la app). material3 1.5.0-rc01 en todas. **Ahora usa `droid-common`** (`includeBuild` y el CI lo clona al lado). Colores del sistema con lo seleccionado en el azul clarito del icono; sus esquinas propias pasan a las de `droid-common` (eran las mismas). APK en `~/Documentos/FotoDroid-0.8.1.apk`. **Sin probar en el móvil.**
 
 **0.8 (13-nov-2026): papelera y pila al día. Hecha en el servidor (`plex`), sin móvil y sin la
 clave de firma.** El mismo día se compiló y firmó en el portátil (pasan pruebas y lint): APK en
-`~/Documentos/FotoDroid-0.8.apk`, con el mismo certificado que la 0.7. **Sin probar en el móvil**
-(en el emulador no se instala: sólo trae librerías arm64). Falta **probar la papelera con fotos que no importen antes de fiarse de ella**.
+`~/Documentos/FotoDroid-0.8.apk`, con el mismo certificado que la 0.7. Probada en el móvil el 24-nov-2026, papelera incluida
+(en el emulador no se instala: sólo trae librerías arm64).
 - **Papelera** (`data/Trash.kt`, `ui/TrashScreen.kt`, Ajustes → Papelera; se puede desactivar con
   `Settings.useTrash`). Borrar **mueve** el archivo a `.FotoDroid-papelera` en la raíz de su
   volumen (un cambio de nombre, con `.nomedia`) y lo apunta en `files/papelera.json`; a los 30
@@ -135,9 +137,8 @@ Hecho:
   `statusBarsIgnoringVisibility ∪ displayCutout` (no salta al ocultar las barras) y la de vídeo
   va por encima de la barra de gestos.
 
-Falta / ideas: probar en el móvil (sobre todo MKV/AVI con audio raro, HEIF grandes, borrar con
-MediaStore), abrir archivos desde otras apps (`ACTION_VIEW`), vídeo con códec de vídeo no soportado por el Pixel (MPEG-2, WMV: FFmpeg de Jellyfin
-sólo trae audio; la alternativa sería libVLC), papelera en vez de borrar para siempre.
+Falta / ideas: abrir archivos desde otras apps (`ACTION_VIEW`), vídeo con códec de vídeo no soportado por el Pixel (MPEG-2, WMV: FFmpeg de Jellyfin
+sólo trae audio; la alternativa sería libVLC).
 
 ## Datos
 
