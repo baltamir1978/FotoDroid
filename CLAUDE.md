@@ -10,7 +10,7 @@ Fossify Gallery y QP Gallery.
 
 **Probada en el móvil (24-nov-2026):** Bruno la da por buena («fotodroid ok»), papelera incluida.
 
-**0.8.1 (22-nov-2026): aspecto Material 3 Expressive, como GpsDroid.** Lo pidió Bruno («dale una vuelta al aspecto del resto de apps con este lenguaje de diseño; lo seleccionado debería estar en un verde clarito, no en el mismo gris»). El tema sale de `droid-common` (`ui/Expressive.kt`: `AppTheme` = `MaterialExpressiveTheme` + `MotionScheme.expressive()` + esquinas grandes, y `withBrandSelection`, que pone `secondaryContainer` —chips, indicador de la barra, botones segmentados— en un tono clarito del color de la app). material3 1.5.0-rc01 en todas. **Ahora usa `droid-common`** (`includeBuild` y el CI lo clona al lado). Colores del sistema con lo seleccionado en el azul clarito del icono; sus esquinas propias pasan a las de `droid-common` (eran las mismas). APK en `~/Documentos/FotoDroid-0.8.1.apk`. **Sin probar en el móvil.**
+**0.8.1 (22-nov-2026): aspecto Material 3 Expressive, como GpsDroid.** Lo pidió Bruno («dale una vuelta al aspecto del resto de apps con este lenguaje de diseño; lo seleccionado debería estar en un verde clarito, no en el mismo gris»). El tema sale de `droid-common` (`ui/Expressive.kt`: `AppTheme` = `MaterialExpressiveTheme` + `MotionScheme.expressive()` + esquinas grandes, y `withBrandSelection`, que pone `secondaryContainer` —chips, indicador de la barra, botones segmentados— en un tono clarito del color de la app). material3 1.5.0-rc01 en todas. **Ahora usa `droid-common`** (`includeBuild` y el CI lo clona al lado). Colores del sistema con lo seleccionado en el azul clarito del icono; sus esquinas propias pasan a las de `droid-common` (eran las mismas). APK en `~/Documentos/FotoDroid-0.8.1.apk`.
 
 **0.8 (13-nov-2026): papelera y pila al día. Hecha en el servidor (`plex`), sin móvil y sin la
 clave de firma.** El mismo día se compiló y firmó en el portátil (pasan pruebas y lint): APK en
@@ -52,7 +52,7 @@ grande pasaría a la de selección y la cuadrícula saltaría en mitad del arras
 Bruno vio que «no hay ocultas» cuando sí las había: era porque estaban dentro de una carpeta
 ignorada (ignorar se hereda a las subcarpetas, por diseño desde la 0.1).
 
-**0.5 (11-nov-2026): cristal, iconos y juntar en un grupo existente.** Sin probar en el móvil.
+**0.5 (11-nov-2026): cristal, iconos y juntar en un grupo existente.**
 APK en `~/Documentos/FotoDroid-0.5.apk`.
 - **Barras de cristal** con **Haze 1.2.2** (la versión que va con Compose 1.7.6 / BOM 2024.12; las
   2.x piden Compose más nuevo): el contenido lleva `hazeSource(state)` y la barra `Modifier.glass(state)`
@@ -70,11 +70,11 @@ Google Fotos, que volvía a enseñar lo borrado, y `.pending-…`); salta carpet
 nombre (`JUNK_DIRS`: cache, thumbs, stickers, avatars…, con o sin punto); en `Android/media` no
 entra en paquetes `android*`, `com.android.*`, `com.google.*`, `com.samsung.*`; deja fuera las
 imágenes de menos de 12 KB (`MIN_IMAGE_BYTES`). «Carpetas que empiezan por punto» pasa a estar
-desactivado por defecto. Prueba en `FileScannerTest`. Sin probar en el móvil. APK en
+desactivado por defecto. Prueba en `FileScannerTest`. APK en
 `~/Documentos/FotoDroid-0.4.apk`.
 
 **0.3 (11-nov-2026): escalado y aspecto** (Bruno: «una app sencilla, pero más en línea con el
-diseño de este siglo»). Sin probar en el móvil. APK en `~/Documentos/FotoDroid-0.3.apk`.
+diseño de este siglo»). APK en `~/Documentos/FotoDroid-0.3.apk`.
 - **Escalado**: las miniaturas se piden al tamaño real de la casilla (`thumbPxFor`, escalones
   192…1024 px según columnas y ancho de pantalla); antes eran 320 px fijos y salían borrosas en
   casillas grandes. El visor usa la de la cuadrícula como marcador (`vm.mediaThumbPx`).
@@ -101,12 +101,11 @@ de `Android/` sólo `media`, porque `data` y `obb` no se pueden leer; salta `.th
 se hace al arrancar, desde «Volver a leer el almacenamiento» y al volver a la app si han pasado más
 de 2 min (barra de progreso fina arriba mientras tanto). En Ajustes se puede desactivar, y también
 quitar las carpetas que empiezan por punto. Las carpetas encontradas así salen al principio
-(«sin sitio»). Sin probar en el móvil. APK en `~/Documentos/FotoDroid-0.2.apk`. Si siguen
+(«sin sitio»). APK en `~/Documentos/FotoDroid-0.2.apk`. Si siguen
 faltando carpetas, preguntar la ruta de una para ver por qué.
 
 **0.1 (11-nov-2026): compila y pasan 7 pruebas** (`LibraryTest`: categorías, órdenes, juntar y
-separar). APK firmado en `~/Documentos/FotoDroid-0.1.apk` (5,9 MB, sólo arm64). **Sin probar en el
-móvil.**
+separar). APK firmado en `~/Documentos/FotoDroid-0.1.apk` (5,9 MB, sólo arm64).
 
 Hecho:
 - Lectura de MediaStore (todos los volúmenes, imágenes y vídeos), refresco automático con un
