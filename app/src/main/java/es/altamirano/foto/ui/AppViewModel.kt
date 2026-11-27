@@ -195,6 +195,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         done(n)
     }
 
+    // ---- mover
+    /**
+     * Mueve los archivos a la carpeta [dir]. Se colocan ya en su sitio nuevo en memoria (para que
+     * no desaparezcan mientras el sistema se entera) y después se vuelve a leer todo.
+     */
+    fun moveItems(items: Collection<MediaItem>, dir: String, done: (moved: Int, failed: Int) -> Unit = { _, _ -> }) = viewModelScope.launch {
+        val moved = withContext(Dispatchers.IO) { repo.move(items, java.io.File(dir)) }
+        fun relocate(l: List<MediaItem>) = l.map { m ->
+            val to = moved[m.id] ?: return@map m
+            m.copy(path = to, name = to.substringAfterLast('/'), folder = to.substringBeforeLast('/'),
+                id = if (m.indexed) m.id else FileScanner.idFor(to))
+        }
+        storeItems = storeItems?.let(::relocate)
+        fileItems = relocate(fileItems)
+        media.update { it?.let(::relocate) }
+        done(moved.size, items.size - moved.size)
+        if (moved.isNotEmpty()) { rescanStore(); lastWalk = 0; walkFiles() }
+    }
+
+    /** Raíz del almacenamiento interno, donde se crean las carpetas nuevas (`Pictures/<nombre>`). */
+    val picturesDir: String get() = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).path
+
     // ---- papelera
     /** ¿Lo que se borra va a la papelera? (Ajustes). */
     val usesTrash get() = config.value.settings.useTrash

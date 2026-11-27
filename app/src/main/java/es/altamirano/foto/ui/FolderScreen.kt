@@ -42,6 +42,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.automirrored.rounded.DriveFileMove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -102,6 +103,7 @@ fun FolderScreen(vm: AppViewModel, key: String) {
     val snackbar = remember { SnackbarHostState() }
     val selected = remember(key) { mutableStateListOf<Long>() }
     var confirmDelete by remember { mutableStateOf(false) }
+    var askMove by remember { mutableStateOf(false) }
     val haze = remember { HazeState() }
     val grid = vm.gridState("folder:$key")
     val columns = config.settings.mediaColumns
@@ -178,10 +180,25 @@ fun FolderScreen(vm: AppViewModel, key: String) {
             ) {
                 FloatingBar(listOf(
                     BarAction(Icons.Rounded.Share, "Compartir") { share(ctx, items.filter { it.id in selected }) },
+                    BarAction(Icons.AutoMirrored.Rounded.DriveFileMove, "Mover") { askMove = true },
                     BarAction(Icons.Rounded.Delete, "Eliminar", Color(0xFFE5484D)) { confirmDelete = true },
                 ), haze)
             }
         }
+    }
+
+    if (askMove) {
+        val lib = library
+        // Las ocultas sólo se ofrecen si se están viendo (o no están bloqueadas).
+        val hiddenOk = !config.settings.lockHidden || vm.hiddenUnlocked
+        val dests = if (lib == null) emptyList() else lib.normal + (if (hiddenOk) lib.hidden else emptyList())
+        val chosen = items.filter { it.id in selected }
+        MoveDialog(dests, chosen, vm.picturesDir, onPick = { dir ->
+            selected.clear()
+            vm.moveItems(chosen, dir) { ok, bad ->
+                scope.launch { snackbar.showSnackbar(if (bad == 0) "Movidos: $ok" else "Movidos: $ok · no se pudieron mover: $bad") }
+            }
+        }, onDismiss = { askMove = false })
     }
 
     if (confirmDelete) {

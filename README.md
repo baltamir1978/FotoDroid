@@ -1,7 +1,7 @@
 # FotoDroid
 
 Galería de fotos y vídeos para Android **por carpetas**, rápida y minimalista. Sin álbumes y sin
-edición: ver, ampliar, compartir y borrar.
+edición: ver, ampliar, compartir, mover a otra carpeta y borrar.
 
 **Estado: 0.8.1** (22-nov-2026), con papelera, todavía sin probar en el móvil; la 0.7 es la que está
 en uso. Pensada para un Pixel 11 Pro con
@@ -20,6 +20,7 @@ Android 17 (no funciona por debajo de Android 15).
   fecha. Juntar carpetas con un grupo que ya existe las añade a ese grupo (con su nombre). Se
   pueden separar después.
 - Selección individual o múltiple de carpetas y de archivos, con las acciones en una barra flotante.
+- **Mover** archivos a otra carpeta (o a una nueva en Imágenes) sin salir de la app.
 - **Pellizcar** en las cuadrículas para cambiar el número de columnas; miniaturas nítidas a cualquier tamaño.
 - Diseño Material 3 actual: colores del fondo de pantalla, fuentes del Pixel, título grande plegable,
   **barras de cristal** translúcidas y desenfocadas e iconos redondeados en círculos tonales.

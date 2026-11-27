@@ -119,6 +119,24 @@ class MediaRepository(private val context: Context) {
         return n
     }
 
+    /**
+     * Mueve los archivos a la carpeta [dir]. Devuelve, por id, la ruta nueva de los que se han
+     * movido. Se avisa al sistema de la ruta vieja (para que suelte la fila si no ha seguido el
+     * cambio) y de la nueva (para que la indexe; si la carpeta tiene `.nomedia`, no lo hará y
+     * saldrá por el recorrido de archivos).
+     */
+    fun move(items: Collection<MediaItem>, dir: File): Map<Long, String> {
+        val done = HashMap<Long, String>()
+        val toScan = ArrayList<String>()
+        for (m in items) {
+            val to = FileMover.move(m.path, dir) ?: continue
+            done[m.id] = to
+            toScan += m.path; toScan += to
+        }
+        announce(toScan)
+        return done
+    }
+
     /** Lo restaurado de la papelera vuelve a salir en el sistema (y en las demás apps). */
     fun announce(paths: Collection<String>) {
         if (paths.isNotEmpty()) MediaScannerConnection.scanFile(context, paths.toTypedArray(), null, null)

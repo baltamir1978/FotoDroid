@@ -11,6 +11,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.Arrangement
@@ -169,12 +170,14 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
                     )
                 }
                 else -> {
-                    // Mantener pulsada una carpeta y arrastrar la recoloca; si se suelta sin moverla, se
+                    // Mantener pulsada una carpeta y arrastrar la recoloca; si se suelta sin recolocar, se
                     // selecciona. Se decide al soltar, para que la barra no cambie (y la cuadrícula no
-                    // salte) en mitad del arrastre.
+                    // salte) en mitad del arrastre. La selección va por `longPressRelease`, que no
+                    // espera a que Reorderable dé el arrastre por empezado.
                     val gridState = vm.gridState("folders:$category")
                     val live = remember(entries) { entries.toMutableStateList() }
                     var dragFrom by remember { mutableStateOf(emptyList<String>()) }
+                    var pressFrom by remember { mutableStateOf(emptyList<String>()) }
                     val haptic = LocalHapticFeedback.current
                     val rstate = rememberReorderableLazyGridState(gridState) { from, to ->
                         val a = live.indexOfFirst { it.key == from.key }
@@ -192,18 +195,32 @@ fun FoldersScreen(vm: AppViewModel, category: Category) {
                                 FolderTile(
                                     e, px, selected = e.key in selected, selecting = selected.isNotEmpty(),
                                     modifier = Modifier.graphicsLayer { scaleX = lift; scaleY = lift }
-                                        .longPressDraggableHandle(
-                                            onDragStarted = {
+                                        .longPressRelease(e.key,
+                                            onLongPress = {
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                dragFrom = live.map { it.key }
+                                                pressFrom = live.map { it.key }
                                             },
+                                            onRelease = {
+                                                // Soltar sin haber recolocado nada (quieto o con un
+                                                // pequeño movimiento) es seleccionar.
+                                                if (live.map { it.key } == pressFrom) {
+                                                    if (e.key in selected) selected.remove(e.key) else selected.add(e.key)
+                                                }
+                                            },
+                                        )
+                                        .longPressDraggableHandle(
+                                            onDragStarted = { dragFrom = live.map { it.key } },
                                             onDragStopped = {
                                                 val now = live.map { it.key }
                                                 if (now != dragFrom) vm.reorder(category, now)
-                                                else if (e.key in selected) selected.remove(e.key) else selected.add(e.key)
                                             },
                                         )
-                                        .clickable {
+                                        // La pulsación larga la llevan `longPressRelease` y el arrastre; aquí va vacía
+                                        // para que soltar después de mantener no cuente como toque.
+                                        .combinedClickable(
+                                            hapticFeedbackEnabled = false,
+                                            onLongClick = {},
+                                        ) {
                                             if (selected.isNotEmpty()) { if (e.key in selected) selected.remove(e.key) else selected.add(e.key) }
                                             else vm.push(Screen.Folder(e.key))
                                         },

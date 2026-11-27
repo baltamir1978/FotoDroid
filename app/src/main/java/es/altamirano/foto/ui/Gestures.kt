@@ -64,3 +64,32 @@ fun thumbPxFor(columns: Int): Int {
 }
 
 
+
+/**
+ * Pulsación larga en una casilla que también se puede arrastrar (Reorderable): [onLongPress] en
+ * cuanto se cumple el tiempo (con vibración, para notar que se ha reconocido) y [onRelease] al
+ * soltar después. Quien lo usa decide al soltar si era seleccionar (el orden no ha cambiado) o
+ * recolocar. Sólo mira: no consume nada, así que convive con el arrastre y con el toque normal.
+ * Si el dedo se mueve antes de tiempo, es desplazar la cuadrícula y no cuenta.
+ *
+ * Hasta la 0.8.1 la selección dependía de `onDragStopped` de Reorderable, que sólo llega cuando
+ * el arrastre ha empezado de verdad: había que mover un poco el dedo para que se reconociera.
+ */
+fun Modifier.longPressRelease(key: Any?, onLongPress: () -> Unit, onRelease: () -> Unit) = pointerInput(key) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        val slop = viewConfiguration.touchSlop
+        val longAt = down.uptimeMillis + viewConfiguration.longPressTimeoutMillis
+        var now = down.uptimeMillis
+        var long = false
+        while (true) {
+            val ev = if (long) awaitPointerEvent(PointerEventPass.Initial)
+            else withTimeoutOrNull((longAt - now).coerceAtLeast(1)) { awaitPointerEvent(PointerEventPass.Initial) }
+            if (ev == null) { long = true; onLongPress(); continue }
+            val c = ev.changes.firstOrNull { it.id == down.id } ?: break
+            now = c.uptimeMillis
+            if (!c.pressed) { if (long) onRelease(); break }
+            if (!long && (ev.changes.count { it.pressed } > 1 || (c.position - down.position).getDistance() > slop)) break
+        }
+    }
+}

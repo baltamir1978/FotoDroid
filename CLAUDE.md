@@ -8,6 +8,23 @@ Fossify Gallery y QP Gallery.
 
 ## Estado
 
+**0.9 (27-nov-2026): mover entre carpetas y selección de carpetas a la primera. Sin probar en el móvil**
+(no estaba conectado; APK en `~/Documentos/Software/FotoDroid-0.9.apk`, AAB sin subir a Play).
+Bruno: «quiero poder mover fotos entre carpetas desde la app, actualmente solo me deja compartir;
+para seleccionar un álbum o carpeta tengo que dejar pulsado y hacer un mini desplazamiento».
+- **Mover** en la barra de la selección de archivos: diálogo «Mover a…» con las carpetas en el
+  orden de la principal (las de los grupos, por separado; las ocultas sólo si se ven) y «Carpeta
+  nueva» (en `Pictures/`). `data/FileMover.kt`: cambio de nombre en el mismo volumen; entre
+  volúmenes copia, comprueba el tamaño y borra el original; nunca sobrescribe («nombre (1).ext»).
+  Después se avisa a MediaScanner de la ruta vieja y la nueva, y en memoria los archivos ya salen
+  en su sitio nuevo hasta que se vuelve a leer. 5 pruebas en `FileMoverTest` (23 en total).
+- **Seleccionar carpetas**: la selección dependía de `onDragStopped` de Reorderable, que sólo llega
+  si el arrastre llega a empezar (había que mover un poco). Ahora `longPressRelease` (`Gestures.kt`)
+  mira la pulsación larga por su cuenta, sin consumir: vibra al cumplirse el tiempo y, al soltar,
+  si el orden no ha cambiado, selecciona. El toque de la casilla pasa a `combinedClickable` con
+  pulsación larga vacía, para que soltar tras mantener no abra la carpeta. Comprobar en el móvil:
+  mantener y soltar quieto selecciona; mantener y arrastrar recoloca sin seleccionar.
+
 **26-nov-2026: también por Google Play** (prueba interna, sólo Bruno), con la misma clave de
 release y sin la protección automática de Play; ver el `CLAUDE.md` de `~/Proyectos`. Mismo código
 y versión que antes: no cambió nada de la app.
