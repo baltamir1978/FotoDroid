@@ -9,7 +9,7 @@ Fossify Gallery y QP Gallery.
 ## Estado
 
 **0.9 (27-nov-2026): mover entre carpetas y selección de carpetas a la primera. Sin probar en el móvil**
-(no estaba conectado; APK en `~/Documentos/Software/FotoDroid-0.9.apk`, AAB sin subir a Play).
+(no estaba conectado; APK en `~/Documentos/Software/FotoDroid-0.9.apk`; en Play, prueba interna, el 27-nov-2026).
 Bruno: «quiero poder mover fotos entre carpetas desde la app, actualmente solo me deja compartir;
 para seleccionar un álbum o carpeta tengo que dejar pulsado y hacer un mini desplazamiento».
 - **Mover** en la barra de la selección de archivos: diálogo «Mover a…» con las carpetas en el
